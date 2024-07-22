@@ -1,27 +1,20 @@
 #!/usr/bin/python3
 import time
 
-import numpy as np
-
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
 
 picam2 = Picamera2()
-video_config = picam2.create_video_configuration({"size": (1280, 720), "format": "RGB888"})
-picam2.configure(video_config)
-picam2.start_preview()
-encoder = H264Encoder(1000000, repeat=True)
-encoder.output = CircularOutput(buffersize=600, outputtofile=False)
-picam2.start()
-picam2.start_encoder(encoder)
-
-prev = None
-encoding = False
-ltime = 0
-
-time.sleep(5)
-encoder.output.fileoutput = f"output.h264"
-encoder.output.start()
-time.sleep(5)
-encoder.output.stop()
+fps = 30
+dur = 5
+micro = int((1 / fps) * 1000000)
+vconfig = picam2.create_video_configuration()
+vconfig['controls']['FrameDurationLimits'] = (micro, micro)
+picam2.configure(vconfig)
+encoder = H264Encoder()
+output = CircularOutput(buffersize=int(fps * (dur + 0.2)), outputtofile=False)
+output.fileoutput = "file.h264"
+picam2.start_recording(encoder, output)
+time.sleep(dur)
+output.stop()
