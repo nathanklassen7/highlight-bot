@@ -19,17 +19,9 @@ picam2.start_encoder(encoder)
 prev = None
 encoding = False
 ltime = 0
-startTime= time.time()
-while True:
-    elapsedTime = time.time()-startTime
-    if elapsedTime > 5:
-        if not encoding:
-            encoder.output.fileoutput = f"output.h264"
-            encoder.output.start()
-            encoding = True
-            ltime = time.time()
-            print('encoding')
-    if encoding and time.time() - ltime > 5.0:
-        encoder.output.stop()
-        encoding = False
-        break
+
+time.sleep(5)
+encoder.output.fileoutput = f"output.h264"
+encoder.output.start()
+time.sleep(5)
+encoder.output.stop()
