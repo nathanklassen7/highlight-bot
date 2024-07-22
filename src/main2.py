@@ -18,7 +18,7 @@ video_buffer = [[None] * VIDEO_BUFFER_SIZE,0]
 # Flag to indicate recording state
 recording = False
 
-fps = 60
+fps = 30
 frame_time = 1/fps
 
 cam = activate_camera()
