@@ -7,7 +7,7 @@ from testcam import activate_camera
 
 # Constants for video capture
 VIDEO_DURATION = 30  # Total duration to capture in seconds
-VIDEO_BUFFER_SIZE = 120  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
+VIDEO_BUFFER_SIZE = 600  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
 
 # Initialize OpenCV capture
 cap = cv2.VideoCapture(1)  # Use 0 for the built-in webcam
@@ -18,7 +18,7 @@ video_buffer = [[None] * VIDEO_BUFFER_SIZE,0]
 # Flag to indicate recording state
 recording = False
 
-fps = 30
+fps = 60
 frame_time = 1/fps
 
 cam = activate_camera()
@@ -30,8 +30,9 @@ def capture_frames():
         start_time = time.time()
         frame = cam.capture_array()
         frame_cap_time = time.time() - start_time
+        frame_ratio = f'{frame_cap_time/frame_time*100}%'
         next_frame_index = (video_buffer[1] + 1) % VIDEO_BUFFER_SIZE
-        print(next_frame_index,frame_cap_time)
+        print(next_frame_index,frame_ratio)
         video_buffer[0][next_frame_index] = frame
         video_buffer[1] = next_frame_index
         # Delay to control the frame rate of the video capture
@@ -42,31 +43,6 @@ def capture_frames():
             save_video()
             break
         
-
-
-def start_recording():
-    global recording
-    if not recording:
-        print("Started recording...")
-        recording = True
-        threading.Thread(target=capture_frames).start()
-
-def stop_recording():
-    global recording, video_buffer
-    if recording:
-        print("Stopped recording...")
-        recording = False
-        video_buffer_copy = video_buffer
-        # Save buffered frames to a video file
-        frame_size = (video_buffer[1][0].shape[1], video_buffer[1][0].shape[0])  
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Choose codec (codec list: https://www.fourcc.org/codecs.php)
-        out = cv2.VideoWriter('ouput.mp4', fourcc, fps, frame_size)
-
-        for frame in video_buffer:
-            out.write(frame)
-        out.release()
-        video_buffer = []
-
 video_num = 0
 def save_video():
     global video_buffer, video_num
