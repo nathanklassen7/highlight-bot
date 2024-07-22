@@ -8,12 +8,10 @@ from picamera2.outputs import CircularOutput
 picam2 = Picamera2()
 fps = 30
 dur = 5
-micro = int((1 / fps) * 1000000)
-vconfig = picam2.create_video_configuration()
-vconfig['controls']['FrameDurationLimits'] = (micro, micro)
+vconfig = picam2.create_video_configuration(controls={"FrameRate": fps})
 picam2.configure(vconfig)
 encoder = H264Encoder(2000000, repeat=True)
-output = CircularOutput(buffersize=int(fps * (dur + 1)), outputtofile=False)
+output = CircularOutput(buffersize=int(fps * (dur + 1)), outputtofile=True)
 output.fileoutput = "file.h264"
 picam2.start_recording(encoder, output)
 time.sleep(dur)
