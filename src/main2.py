@@ -79,6 +79,8 @@ def save_video():
     ordered_video_array = video_array[frame_index:] + video_array[:frame_index]
     filtered_video_array =  [x for x in ordered_video_array if x is not None]  
     frame_size = (filtered_video_array[0].shape[1], filtered_video_array[0].shape[0])  
+    print(frame_size)
+    return
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Choose codec (codec list: https://www.fourcc.org/codecs.php)
     video_name = f'ouput{video_num}.mp4'
     print(video_name)
