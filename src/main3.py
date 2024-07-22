@@ -8,7 +8,7 @@ picam2 = Picamera2()
 fps = 30
 dur = 5
 micro = int((1 / fps) * 1000000)
-vconfig = picam2.create_video_configuration()
+vconfig = picam2.create_video_configuration({"size": (1536, 864)})
 vconfig['controls']['FrameDurationLimits'] = (micro, micro)
 picam2.configure(vconfig)
 encoder = H264Encoder()
