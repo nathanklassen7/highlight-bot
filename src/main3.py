@@ -5,8 +5,8 @@ from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
 
 picam2 = Picamera2()
-fps = 30
-dur = 5
+fps = 60
+dur = 10
 micro = int((1 / fps) * 1000000)
 vconfig = picam2.create_video_configuration({"size": (1536, 864)})
 vconfig['controls']['FrameDurationLimits'] = (micro, micro)
