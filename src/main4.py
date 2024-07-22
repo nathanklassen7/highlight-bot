@@ -12,7 +12,7 @@ video_config = picam2.create_video_configuration({"size": (1280, 720), "format":
 picam2.configure(video_config)
 picam2.start_preview()
 encoder = H264Encoder(1000000, repeat=True)
-encoder.output = CircularOutput(buffersize=300, outputtofile=False)
+encoder.output = CircularOutput(buffersize=600, outputtofile=False)
 picam2.start()
 picam2.start_encoder(encoder)
 
