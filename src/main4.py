@@ -13,6 +13,8 @@ picam2.configure(vconfig)
 encoder = H264Encoder(2000000, repeat=True)
 output = CircularOutput(buffersize=int(fps * (dur + 1)), outputtofile=True)
 output.fileoutput = "file.h264"
+time.sleep(5)
+print('test')
 picam2.start_recording(encoder, output)
 time.sleep(dur)
 output.stop()
