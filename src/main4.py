@@ -24,14 +24,12 @@ while True:
     elapsedTime = time.time()-startTime
     if elapsedTime > 5:
         if not encoding:
-            epoch = int(time.time())
             encoder.output.fileoutput = f"output.h264"
             encoder.output.start()
             encoding = True
+            ltime = time.time()
             print('encoding')
-        ltime = time.time()
-    else:
-        if encoding and time.time() - ltime > 5.0:
-            encoder.output.stop()
-            encoding = False
-            break
+    if encoding and time.time() - ltime > 5.0:
+        encoder.output.stop()
+        encoding = False
+        break
