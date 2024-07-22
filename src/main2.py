@@ -7,7 +7,7 @@ from testcam import activate_camera
 
 # Constants for video capture
 VIDEO_DURATION = 30  # Total duration to capture in seconds
-VIDEO_BUFFER_SIZE = 60  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
+VIDEO_BUFFER_SIZE = 120  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
 
 # Initialize OpenCV capture
 cap = cv2.VideoCapture(1)  # Use 0 for the built-in webcam
@@ -18,7 +18,7 @@ video_buffer = [[None] * VIDEO_BUFFER_SIZE,0]
 # Flag to indicate recording state
 recording = False
 
-fps = 20
+fps = 30
 frame_time = 1/fps
 
 cam = activate_camera()
@@ -84,9 +84,10 @@ def save_video():
     print(video_name)
 
     out = cv2.VideoWriter(video_name, fourcc, fps, frame_size)
-
-    for frame in filtered_video_array:
+    for index, frame in enumerate(filtered_video_array):
         out.write(frame)
+        print(index)
+        time.sleep(0.01)
     out.release()
     video_num+=1
 
