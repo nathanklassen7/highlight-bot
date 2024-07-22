@@ -38,7 +38,7 @@ def capture_frames():
         current_time = time.time()
         sleep_time = current_time%frame_time
         time.sleep(sleep_time)  # Approximately 30 fps (1/30 = 0.033 seconds per frame)
-        if cv2.waitKey(1) == ord(' ') or next_frame_index==60:
+        if cv2.waitKey(1) == ord(' '):
             save_video()
             break
         
