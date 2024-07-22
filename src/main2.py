@@ -7,7 +7,7 @@ from testcam import activate_camera
 
 # Constants for video capture
 VIDEO_DURATION = 30  # Total duration to capture in seconds
-VIDEO_BUFFER_SIZE = 600  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
+VIDEO_BUFFER_SIZE = 200  # Number of frames to keep in buffer (approx 30 seconds at 30 fps)
 
 # Initialize OpenCV capture
 cap = cv2.VideoCapture(1)  # Use 0 for the built-in webcam
