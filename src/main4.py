@@ -23,7 +23,7 @@ encoding = False
 ltime = 0
 startTime= time.time()
 while True:
-    elapsedTime = time.time()-startTime()
+    elapsedTime = time.time()-startTime
     if elapsedTime > 5:
         if not encoding:
             epoch = int(time.time())
