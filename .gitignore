@@ -16,6 +16,7 @@ lib64/
 parts/
 sdist/
 var/
+env/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -48,3 +49,5 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+clips/
