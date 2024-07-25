@@ -1,11 +1,10 @@
-from slack_sdk.errors import SlackApiError
 from flask import Flask, request, Response
 
 from slack_sdk import WebClient
 import os
 
-from upload_with_slack import upload_videos_sequentially
-import threading 
+from endpoints.list_videos import list_videos
+from endpoints.send_all_clips import send_all_clips
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 
 client = WebClient(token=slack_token)
@@ -27,25 +26,23 @@ def slack_events():
 
 def handle_mention(event):
     text = event.get('text')
-    channel = event.get('channel')
-    user = event.get('user')
+    channel = event.get("channel")
     ts = event.get("ts")
     print(text)
 
+    def reply_thread(message):
+        return client.chat_postMessage(
+            channel=channel,
+            text=message,
+            thread_ts=ts
+        )
+
     # Check if the message contains a specific command
     if 'collect' in text:
-        try:
-            client.chat_postMessage(
-                channel=channel,
-                text=f"Working on it!",
-                thread_ts=ts
-            )
-            threading.Thread(target=upload_videos_sequentially,args=(client,channel,ts)).start()
-            return Response(status=200)
-        except SlackApiError as e:
-            print(f"Error posting message: {e.response['error']}")
-            return Response(status=500)
-            
+        return send_all_clips(client,event,reply_thread)
+    if 'list' in text:
+        return list_videos(reply_thread)
+    
 def init_server():
     app.run(port=3000)
     

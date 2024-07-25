@@ -1,14 +1,9 @@
-#!/usr/bin/python3
-import time
-
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
 from consts import CLIP_DIRECTORY
-from subprocess import call
+from subprocess import call, DEVNULL
 from datetime import datetime
-
-from server import init_server
 
 BUFFER_FILE_NAME = 'buffer.h264'
 
@@ -32,6 +27,9 @@ if __name__ == '__main__':
         picam2.stop_encoder()
         timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
         mp4_file_name = f'clips/{timestamp}.mp4'
-        call([f"ffmpeg -r {fps} -i {BUFFER_FILE_NAME} -c copy {mp4_file_name} -y"], shell=True)
-        call([f"rm {BUFFER_FILE_NAME}"],shell=True)
+        if call([f"ffmpeg -r {fps} -i {BUFFER_FILE_NAME} -c copy {mp4_file_name} -y"], shell=True,stdout=DEVNULL, stderr=DEVNULL) == 1:
+            print("Error converting .h264 file")
+        else:
+            print("Converted!")
+            call([f"rm {BUFFER_FILE_NAME}"],shell=True)
         n = n + 1
