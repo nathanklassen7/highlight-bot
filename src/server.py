@@ -1,5 +1,6 @@
 from flask import Flask, request, Response
 
+from consts import BOT_UID, CLIP_DIRECTORY
 from slack_sdk import WebClient
 import os
 
@@ -28,7 +29,6 @@ def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
     ts = event.get("ts")
-    print(text)
 
     def reply_thread(message):
         return client.chat_postMessage(
@@ -36,11 +36,25 @@ def handle_mention(event):
             text=message,
             thread_ts=ts
         )
+    def upload_file(message,filepath):
+        return client.files_upload_v2(
+            channels=channel,
+            file=filepath,
+            initial_comment=message,
+            thread_ts=ts
+        )
 
+    params = text.split()
+    if not params[0] == BOT_UID:
+        reply_thread("Malformed command!")
+        return Response(status=200)
+    
+    command = params[1]
     # Check if the message contains a specific command
-    if 'collect' in text:
-        return send_all_clips(client,event,reply_thread)
-    if 'list' in text:
+    if command == 'collect':
+        params = params[2:]
+        return send_all_clips(params,reply_thread,upload_file)
+    if command == 'list':
         return list_videos(reply_thread)
     
 def init_server():

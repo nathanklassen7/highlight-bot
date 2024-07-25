@@ -3,52 +3,26 @@ from datetime import datetime
 
 from flask import Response
 
-from consts import CLIP_DIRECTORY
+from get_clip_age import get_clip_age
 from get_sorted_videos import get_sorted_videos
 
 def list_videos(reply_thread):
     try:
         # List all files in the directory
         files = get_sorted_videos()
-        
+        if len(files) == 0:
+            reply_thread("No videos saved!")
+            return Response(status=200)
         videos_with_age = []
 
         message = ''
         
-        for file_name in files:
+        for index,file_name in enumerate(files):
             # Check if the file has a valid video format
-            if file_name.endswith('.mp4'):
-                try:
-                    # Extract the timestamp part from the filename
-                    timestamp_str = file_name.split('.')[0]
-                    
-                    # Parse the timestamp into a datetime object
-                    recorded_time = datetime.strptime(timestamp_str, '%Y-%m-%d-%H:%M:%S')
-                    
-                    # Calculate the time difference from now
-                    current_time = datetime.now()
-                    time_difference = current_time - recorded_time
-                    
-                    # Add the file and the time difference to the list
-                    videos_with_age.append((file_name, time_difference))
-                except ValueError:
-                    print(f"Filename '{file_name}' does not match the expected format.")
-        
-        # Print the results
-        for index, (video, age) in enumerate(videos_with_age):
-            message += f"Highlight {index} - Recorded "
-            days = age.days
-            hours = age.seconds//3600 
-            minutes = (age.seconds//60)%60
-            if days:
-                message += f"{days} days, "
-            if hours:
-                message += f"{hours} hours, "
-            if hours or days:
-                message += "and "
-            if minutes:
-                message += f"{minutes} minutes ago"
-        print(message)
+            if file_name.endswith('.mp4'):    
+                message += f"Highlight {index} - Recorded "
+                message += get_clip_age(file_name)
+                message += "\n"
         reply_thread(message)
         return Response(status=200)
     except FileNotFoundError:
