@@ -1,9 +1,8 @@
 from flask import Flask, request, Response
 
-from consts import BOT_UID, CLIP_DIRECTORY
+from consts import BOT_UID
 from slack_sdk import WebClient
 import os
-
 from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
@@ -64,7 +63,3 @@ def handle_mention(event):
     
 def init_server():
     app.run(port=3000)
-    
-
-if __name__ == '__main__':
-    init_server()

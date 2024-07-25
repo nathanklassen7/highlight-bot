@@ -4,11 +4,15 @@ from picamera2.outputs import CircularOutput
 from consts import CLIP_DIRECTORY
 from subprocess import call, DEVNULL
 from datetime import datetime
+import threading 
+
+from server import init_server
 
 BUFFER_FILE_NAME = 'buffer.h264'
 
 
 if __name__ == '__main__':
+    threading.Thread(target=init_server, daemon=True).start()
     call([f'mkdir -p {CLIP_DIRECTORY}'],shell=True)
     picam2 = Picamera2()
     fps = 60
