@@ -4,6 +4,7 @@ from consts import BOT_UID, CLIP_DIRECTORY
 from slack_sdk import WebClient
 import os
 
+from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
@@ -46,7 +47,6 @@ def handle_mention(event):
 
     params = text.split()
     if not params[0] == BOT_UID:
-        reply_thread("Malformed command!")
         return Response(status=200)
     
     command = params[1]
@@ -56,6 +56,11 @@ def handle_mention(event):
         return send_all_clips(params,reply_thread,upload_file)
     if command == 'list':
         return list_videos(reply_thread)
+    if command == 'delete':
+        params = params[2:]
+        return delete_clips(params,reply_thread)
+    reply_thread("Invalid command!")
+    return Response(status=500)
     
 def init_server():
     app.run(port=3000)
