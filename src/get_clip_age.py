@@ -23,8 +23,6 @@ def get_clip_age(file_name):
         message += f"{days} days, "
     if hours:
         message += f"{hours} hours, "
-    if hours or days:
-        message += "and "
     if minutes:
         message += f"{minutes} minutes, "
     message += f"{seconds} seconds ago"
