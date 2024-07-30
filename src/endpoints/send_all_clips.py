@@ -29,7 +29,11 @@ def send_all_clips(params, reply_thread, upload_file):
             return Response(status=200)
         
     try:
-        reply_thread(f"Sending {len(file_names_to_send)} clips!")
+        file_count = len(file_names_to_send)
+        if file_count == 1:
+            reply_thread("Sending 1 clip!")
+        else:
+            reply_thread(f"Sending {file_count} clips!")
         threading.Thread(target=upload_videos_sequentially,args=(upload_file, file_names_to_send)).start()
         return Response(status=200)
     except SlackApiError as e:

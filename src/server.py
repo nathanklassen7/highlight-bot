@@ -1,12 +1,12 @@
 from flask import Flask, request, Response
 
-from consts import BOT_UID
 from slack_sdk import WebClient
 import os
 from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
+print(slack_token)
 
 client = WebClient(token=slack_token)
 
@@ -14,7 +14,6 @@ app = Flask(__name__)
 
 @app.route('/slack/events', methods=['POST'])
 def slack_events():
-    print('request')
     data = request.json
     if 'challenge' in data:
         return Response(data['challenge'], status=200, mimetype='text/plain')
@@ -45,8 +44,6 @@ def handle_mention(event):
         )
 
     params = text.split()
-    if not params[0] == BOT_UID:
-        return Response(status=200)
     
     command = params[1]
     # Check if the message contains a specific command

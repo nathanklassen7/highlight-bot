@@ -13,7 +13,6 @@ def list_videos(reply_thread):
         if len(files) == 0:
             reply_thread("No videos saved!")
             return Response(status=200)
-        videos_with_age = []
 
         message = ''
         
