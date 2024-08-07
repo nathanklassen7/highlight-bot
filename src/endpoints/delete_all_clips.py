@@ -4,7 +4,6 @@ from slack_sdk.errors import SlackApiError
 from flask import Response
 from consts import CLIP_DIRECTORY
 from get_sorted_videos import get_sorted_videos
-from upload_with_slack import upload_videos_sequentially
 
 def delete_clips(params, reply_thread):
     file_names = get_sorted_videos()
@@ -33,7 +32,11 @@ def delete_clips(params, reply_thread):
     try:
         for file_name in file_names_to_delete:
             os.remove(CLIP_DIRECTORY + file_name)
-        reply_thread(f"Deleted {len(file_names_to_delete)} clips!")
+        files_to_delete_count = len(file_names_to_delete)
+        if files_to_delete_count == 1:
+            reply_thread("Deleted 1 clip!")
+        else:
+            reply_thread(f"Deleted {files_to_delete_count} clips!")
         return Response(status=200)
     except SlackApiError as e:
         print(f"Error posting message: {e.response['error']}")
