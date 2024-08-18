@@ -92,13 +92,14 @@ def wait_for_press(is_recording):
             if time.time() - first_pressed_at > HOLD_TIME:
                 return True
             
+LONG_PRESS_TIME = 1
 def wait_for_release(check_for_long = False):
     press_time = time.time()
     while True:
         while read_button():
             time.sleep(POLL_SPEED)
             hold_time = time.time() - press_time
-            if hold_time > 2 and check_for_long:
+            if hold_time > LONG_PRESS_TIME and check_for_long:
                 return "long"
             
         first_released_at = time.time()
