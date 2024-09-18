@@ -56,7 +56,7 @@ def handle_mention(event):
         params = params[2:]
         return delete_clips(params,reply_thread)
     reply_thread("Invalid command!")
-    return Response(status=500)
+    return Response(status=200)
     
 def init_server():
     app.run(port=3000)
