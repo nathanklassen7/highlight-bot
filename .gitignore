@@ -51,4 +51,5 @@ coverage.xml
 docs/_build/
 
 clips/
+audio/
 buffer.h264
