@@ -1,7 +1,7 @@
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
-from audio_utils import get_audio_data, get_timestamp, timestamp_file, wait_and_delete_timestamp
+from audio_utils import get_audio_data,  timestamp_file
 from consts import CLIP_DIRECTORY
 from subprocess import call, DEVNULL, check_output
 from datetime import datetime

@@ -31,13 +31,22 @@ def wait_and_delete_timestamp():
         time.sleep(0.1)
     os.remove(timestamp_file)
     
-    
+def remove_old_audio_files(files):
+    most_recent_file = None
+    if len(files) != 1:
+        most_recent_file = max(files, key=lambda f: os.path.getctime(os.path.join('audio', f)))
+    else:
+        most_recent_file = files[0]
+    for f in files:
+        if f != most_recent_file:
+            os.remove(os.path.join('audio', f))
+        
 def get_audio_data():
     if os.path.exists(timestamp_file):
         os.remove(timestamp_file)
     files = os.listdir('audio')
     if len(files) != 1:
-        return 0
+        remove_old_audio_files(files)
     wav_src = f'audio/{files[0]}'
     client.send(START)
     client.send(STOP)
