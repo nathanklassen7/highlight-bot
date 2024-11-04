@@ -13,13 +13,15 @@ PORT = 7777
 
 START = OscMessageBuilder('/jack_capture/tm/start').build()
 STOP = OscMessageBuilder('/jack_capture/tm/stop').build()
+HARDSTOP = OscMessageBuilder('/jack_capture/stop').build()
 client = UDPClient(HOST, PORT)
 
 if __name__ == '__main__':
-    wav_src, audio_start_time = get_audio_data()
-    time.sleep(0.1)
-    os.remove(wav_src)
-    print(audio_start_time)
+    client.send(HARDSTOP)
+    # wav_src, audio_start_time = get_audio_data()
+    # time.sleep(0.1)
+    # os.remove(wav_src)
+    # print(audio_start_time)
     # audio_dir = 'audio/'
     # audio_files = sorted(os.listdir(audio_dir))
     # if audio_files:

@@ -19,6 +19,7 @@ PORT = 7777
 
 START = OscMessageBuilder('/jack_capture/tm/start').build()
 STOP = OscMessageBuilder('/jack_capture/tm/stop').build()
+HARDSTOP = OscMessageBuilder('/jack_capture/stop').build()
 client = UDPClient(HOST, PORT)
 
 BUFFER_FILE_NAME = 'buffer.h264'
@@ -26,7 +27,8 @@ BUFFER_FILE_NAME = 'buffer.h264'
 compensation_ms = 0
 video_duration_factor = 1
 
-def main(): 
+def main():
+    time.sleep(1)
     threading.Thread(target=init_server, daemon=True).start()
     call([f'mkdir -p {CLIP_DIRECTORY}'],shell=True)
     picam2 = Picamera2()
@@ -42,6 +44,7 @@ def main():
         write_led('on', True)
         while True:
             picam2.start()
+            call(['sh jack_capture_start.sh'], shell=True)
             indicate_recording_start()
             while True:
                 output = CircularOutput(file=BUFFER_FILE_NAME,buffersize=int(fps * (dur+1)),outputtofile=False)
@@ -54,6 +57,7 @@ def main():
                 signal = wait_for_release(True)
                 if signal == 'long':
                     picam2.stop_encoder()
+                    client.send(HARDSTOP)
                     break
                 indicate_writing()
                 video_end_time = time.time()
