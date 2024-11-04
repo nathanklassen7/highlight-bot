@@ -1,5 +1,4 @@
-from subprocess import check_output
-import time
+from subprocess import call, check_output
 import os
 
 from pythonosc.osc_message_builder import OscMessageBuilder
@@ -11,7 +10,7 @@ HOST = '127.0.0.1'
 PORT = 7777
 
 START = OscMessageBuilder('/jack_capture/tm/start').build()
-STOP = OscMessageBuilder('/jack_capture/tm/stop').build()
+STOP = OscMessageBuilder('/jack_capture/stop').build()
 client = UDPClient(HOST, PORT)
 
 def get_timestamp():
@@ -21,15 +20,6 @@ def get_timestamp():
         line = f.readline()
         return float(line)
 
-        
-def delete_timestamp():
-    if os.path.exists(timestamp_file):
-        os.remove(timestamp_file)
-        
-def wait_and_delete_timestamp():
-    while not os.path.exists(timestamp_file):
-        time.sleep(0.1)
-    os.remove(timestamp_file)
     
 def remove_old_audio_files(files):
     most_recent_file = None
@@ -41,6 +31,12 @@ def remove_old_audio_files(files):
         if f != most_recent_file:
             os.remove(os.path.join('audio', f))
         
+def start_recording_audio():
+    call(['sh jack_capture_start.sh'], shell=True)
+    
+def stop_recording_audio():
+    client.send(STOP)
+
 def get_audio_data():
     if os.path.exists(timestamp_file):
         os.remove(timestamp_file)

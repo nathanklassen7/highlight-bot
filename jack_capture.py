@@ -17,6 +17,7 @@ HARDSTOP = OscMessageBuilder('/jack_capture/stop').build()
 client = UDPClient(HOST, PORT)
 
 if __name__ == '__main__':
+    client.send(START)
     client.send(HARDSTOP)
     # wav_src, audio_start_time = get_audio_data()
     # time.sleep(0.1)

@@ -1,26 +1,16 @@
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
-from audio_utils import get_audio_data,  timestamp_file
+from audio_utils import get_audio_data, start_recording_audio, stop_recording_audio,  timestamp_file
 from consts import CLIP_DIRECTORY
 from subprocess import call, DEVNULL, check_output
 from datetime import datetime
 import threading 
 import time
 import os
-from pythonosc.osc_message_builder import OscMessageBuilder
-from pythonosc.udp_client import UDPClient
 
 from output import cleanup, indicate_recording_start, indicate_recording_stop, indicate_saved_video, indicate_writing, wait_for_press, wait_for_release, write_led, indicate_save_error
 from server import init_server
-
-HOST = '127.0.0.1'
-PORT = 7777
-
-START = OscMessageBuilder('/jack_capture/tm/start').build()
-STOP = OscMessageBuilder('/jack_capture/tm/stop').build()
-HARDSTOP = OscMessageBuilder('/jack_capture/stop').build()
-client = UDPClient(HOST, PORT)
 
 BUFFER_FILE_NAME = 'buffer.h264'
 
@@ -44,20 +34,17 @@ def main():
         write_led('on', True)
         while True:
             picam2.start()
-            call(['sh jack_capture_start.sh'], shell=True)
             indicate_recording_start()
             while True:
                 output = CircularOutput(file=BUFFER_FILE_NAME,buffersize=int(fps * (dur+1)),outputtofile=False)
                 picam2.start_encoder(encoder, output)
-                [wav_src, audio_start_time] = get_audio_data()
-                os.remove(wav_src)
-                os.remove(timestamp_file)
+                start_recording_audio()
                 wait_for_press(True)
                 write_led('record',False)
                 signal = wait_for_release(True)
                 if signal == 'long':
                     picam2.stop_encoder()
-                    client.send(HARDSTOP)
+                    stop_recording_audio()
                     break
                 indicate_writing()
                 video_end_time = time.time()
