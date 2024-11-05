@@ -1,10 +1,12 @@
 from subprocess import call, check_output
 import os
+import time
 
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.udp_client import UDPClient
 
 timestamp_file = "time.tme"
+AUDIO_BUFFER_FILE = 'buffer.wav'
 
 HOST = '127.0.0.1'
 PORT = 7777
@@ -19,35 +21,24 @@ def get_timestamp():
     with open(timestamp_file, 'r') as f:
         line = f.readline()
         return float(line)
-
-    
-def remove_old_audio_files(files):
-    most_recent_file = None
-    if len(files) != 1:
-        most_recent_file = max(files, key=lambda f: os.path.getctime(os.path.join('audio', f)))
-    else:
-        most_recent_file = files[0]
-    for f in files:
-        if f != most_recent_file:
-            os.remove(os.path.join('audio', f))
         
 def start_recording_audio():
+    if os.path.exists(timestamp_file):
+        os.remove(timestamp_file)
+    if os.path.exists(AUDIO_BUFFER_FILE):
+        os.remove(AUDIO_BUFFER_FILE)
+
     call(['sh jack_capture_start.sh'], shell=True)
     
 def stop_recording_audio():
     client.send(STOP)
 
 def capture_audio_data():
-    if os.path.exists(timestamp_file):
-        os.remove(timestamp_file)
-    files = os.listdir('audio')
-    if len(files) != 1:
-        remove_old_audio_files(files)
-    wav_src = f'audio/{files[0]}'
     client.send(START)
     client.send(STOP)
-    audio_duration = float(check_output(['ffprobe', '-i', wav_src, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0']).decode('utf-8').strip())
+    
+    audio_duration = float(check_output(['ffprobe', '-i', AUDIO_BUFFER_FILE, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0']).decode('utf-8').strip())
     audio_end_time = get_timestamp()
     audio_start_time = audio_end_time - audio_duration
 
-    return wav_src, audio_start_time
+    return audio_start_time

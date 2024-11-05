@@ -8,7 +8,7 @@ import os
 from encoding_utils import encode_video
 from output import cleanup, indicate_recording_start, indicate_recording_stop, indicate_saved_video, indicate_writing, wait_for_press, wait_for_release, write_led, indicate_save_error
 from server import init_server
-from video_utils import capture_video_data, BUFFER_FILE_NAME, start_camera, stop_camera, start_recording_video, stop_recording_video
+from video_utils import capture_video_data, start_camera, stop_camera, start_recording_video, stop_recording_video
 
 def main():
     time.sleep(1)
@@ -38,20 +38,16 @@ def main():
                 indicate_writing()
                 
                 video_start_time = capture_video_data()
-                [wav_src, audio_start_time] = capture_audio_data()
+                audio_start_time = capture_audio_data()
                 
-                encode_result = encode_video(wav_src, BUFFER_FILE_NAME, audio_start_time, video_start_time)
+                encode_result = encode_video(audio_start_time, video_start_time)
                 
                 if encode_result == 1:
                     print("Error converting .h264 file and joining audio")
                     indicate_save_error()
                 else:
                     print("Converted!")
-                    call([f"rm {BUFFER_FILE_NAME}"],shell=True)
                     indicate_saved_video()
-                    
-                os.remove(timestamp_file)
-                os.remove(wav_src)
                 
             indicate_recording_stop()
             stop_camera()
