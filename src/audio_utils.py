@@ -37,7 +37,7 @@ def start_recording_audio():
 def stop_recording_audio():
     client.send(STOP)
 
-def get_audio_data():
+def capture_audio_data():
     if os.path.exists(timestamp_file):
         os.remove(timestamp_file)
     files = os.listdir('audio')

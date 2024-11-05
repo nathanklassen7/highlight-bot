@@ -6,7 +6,7 @@ import RPi.GPIO as GPIO
 
 import os
 
-from src.audio_utils import get_audio_data
+from src.audio_utils import capture_audio_data
 
 HOST = '127.0.0.1'
 PORT = 7777
