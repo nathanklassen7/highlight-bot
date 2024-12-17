@@ -47,3 +47,26 @@ class ResponseFunctions:
             initial_comment=message,
             thread_ts=timestamp
         )
+
+
+def post_message(channel: str, text: str, thread_ts: str = None):
+    return client.chat_postMessage(
+        channel=channel,
+        text=text,
+        thread_ts=thread_ts
+    )
+    
+def get_message(channel: str, timestamp: str):
+    return client.conversations_history(
+        channel=channel,
+        timestamp=timestamp,
+        limit=1,
+        inclusive=True
+    )
+    
+def update_message_blocks(channel: str, timestamp: str, blocks: list):
+    return client.chat_update(
+        channel=channel,
+        timestamp=timestamp,
+        blocks=blocks
+    )

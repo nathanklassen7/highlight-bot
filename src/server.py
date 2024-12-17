@@ -6,11 +6,9 @@ import os
 from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
-from server_utils import ResponseFunctions, ResponseWithStatus
+from server_utils import ResponseFunctions, ResponseWithStatus, get_message, post_message, update_message_blocks
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 print(slack_token)
-
-client = WebClient(token=slack_token)
 
 app = Flask(__name__)
 
@@ -42,9 +40,14 @@ def slack_interact():
     channel_id = payload['container']['channel_id']
     message_ts = payload['container']['message_ts']
     
-    # Response URL can be used to update the message later
-    response_url = payload['response_url']
-    print(f"Interact: {action_id} {block_id} {button_value} {channel_id} {message_ts} {response_url}")
+    get_message_response     = get_message(channel_id, message_ts)
+    original_blocks = get_message_response['messages'][0]['blocks']
+    
+    new_blocks = original_blocks[1:]
+    
+    update_message_blocks(channel_id, message_ts, new_blocks)
+    
+    print(f"Interact: {action_id} {block_id} {button_value} {channel_id} {message_ts}")
     return ResponseWithStatus("Interact")
 
 @app.route('/slack/command', methods=['POST'])
@@ -67,7 +70,7 @@ def handle_mention(event):
     
     message = f"Hey <@{event.get('user')}>!"
     
-    client.chat_postMessage(
+    post_message(
         channel=channel,
         text=message,
         thread_ts=ts
