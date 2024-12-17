@@ -1,4 +1,5 @@
 from flask import Flask, request, Response
+from typing import Callable
 
 from slack_sdk import WebClient
 import os
@@ -31,9 +32,19 @@ def slack_commands():
     text = data.get('text')
     user_id = data.get('user_id')
     channel_id = data.get('channel_id')
-    print(command,text, channel_id)
+    ts = data.get('ts')
+    print(data)
     return Response(status=200)
-
+    
+    send_message, upload_file, send_ephemeral = build_response_functions(channel_id, ts, user_id)
+    params = text.split()
+    
+    if command == 'hl-collect':
+        return send_all_clips(text,send_message,upload_file)
+    if command == 'hl-list':
+        return list_videos(send_ephemeral)
+    if command == 'hl-delete':
+        return delete_clips(text,send_message)
     # # Handle different commands
     # if command == '/hello':
     #     return handle_hello_command(text, user_id, channel_id)
@@ -41,30 +52,18 @@ def slack_commands():
     #     return handle_help_command()
     # # Add more command handlers as needed
 
-    # # Default response if command is not recognized
-    # return Response(
-    #     'Command not recognized. Try /help for available commands.',
-    #     status=200,
-    #     mimetype='application/json'
-    # )
+    # Default response if command is not recognized
+    return Response(
+        'Command not recognized. Try /help for available commands.',
+        status=200,
+        mimetype='application/json'
+    )
 def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
     ts = event.get("ts")
-
-    def reply_thread(message):
-        return client.chat_postMessage(
-            channel=channel,
-            text=message,
-            thread_ts=ts
-        )
-    def upload_file(message,filepath):
-        return client.files_upload_v2(
-            channels=channel,
-            file=filepath,
-            initial_comment=message,
-            thread_ts=ts
-        )
+    user_id = event.get("user")
+    reply_thread, upload_file = build_response_functions(channel, ts, user_id)
 
     params = text.split()
     
@@ -83,3 +82,37 @@ def handle_mention(event):
     
 def init_server():
     app.run(port=3000)
+    
+def build_response_functions(channel_id: str, timestamp: str, user_id: str) -> tuple[
+    Callable[[str], dict],  # reply_thread type
+    Callable[[str, str], dict]  # upload_file type
+]:
+    def reply_thread(message: str) -> dict:
+        return client.chat_postMessage(
+            channel=channel_id,
+            text=message,
+            thread_ts=timestamp
+        )
+        
+    def send_message(message:str)  -> dict:
+        return client.chat_postMessage(
+            channel=channel_id,
+            text=message,
+            thread_ts=timestamp
+        )
+        
+    def send_ephemeral(message:str) -> dict:
+        return client.chat_postEphemeral(
+            channel=channel_id,
+            text=message,
+            user=user_id
+        )
+        
+    def upload_file(message: str, filepath: str) -> dict:
+        return client.files_upload_v2(
+            channels=channel_id,
+            file=filepath,
+            initial_comment=message,
+            thread_ts=timestamp
+        )
+    return reply_thread, upload_file
