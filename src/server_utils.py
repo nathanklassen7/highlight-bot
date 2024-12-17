@@ -13,7 +13,6 @@ class ResponseFunctions:
         self.params = form_data.get('text').split()
         self.command = form_data.get('command')
         self.timestamp = form_data.get('ts')
-        print(self.timestamp)
 
     def reply_to_thread(self, message: str, timestamp: str) -> dict:
         return client.chat_postMessage(
@@ -21,18 +20,20 @@ class ResponseFunctions:
             text=message,
             thread_ts=timestamp
         )
-        
+    
     def send_message(self, message: str) -> dict:
         return client.chat_postMessage(
             channel=self.channel_id,
             text=message,
+            thread_ts=self.timestamp
         )
         
     def send_ephemeral(self, message: str) -> dict:
         return client.chat_postEphemeral(
             channel=self.channel_id,
             text=message,
-            user=self.user_id
+            user=self.user_id,
+            thread_ts=self.timestamp
         )
         
     def upload_file(self, message: str, filepath: str, timestamp: str) -> dict:
