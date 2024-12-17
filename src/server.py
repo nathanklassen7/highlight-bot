@@ -40,14 +40,15 @@ def slack_interact():
     channel_id = payload['container']['channel_id']
     message_ts = payload['container']['message_ts']
     
-    get_message_response     = get_message(channel_id, message_ts)
+    print(f"Interact: {action_id} {block_id} {button_value} {channel_id} {message_ts}")
+    
+    get_message_response = get_message(channel_id, message_ts)
     original_blocks = get_message_response['messages'][0]['blocks']
     
     new_blocks = original_blocks[1:]
     
     update_message_blocks(channel_id, message_ts, new_blocks)
     
-    print(f"Interact: {action_id} {block_id} {button_value} {channel_id} {message_ts}")
     return ResponseWithStatus("Interact")
 
 @app.route('/slack/command', methods=['POST'])
