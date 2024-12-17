@@ -32,8 +32,8 @@ def list_videos():
 
 
 def get_sessions(files):
-    sessions = [[files.pop(0)]]
-    for file_name in files:
+    sessions = [[files[0]]]
+    for file_name in files[1:]:
         if get_time_difference(file_name, sessions[-1][0]) < timedelta(seconds=10):
             sessions[-1].append(file_name)
         else:
