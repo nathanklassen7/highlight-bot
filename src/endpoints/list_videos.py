@@ -19,7 +19,7 @@ def list_videos():
             message += f"*Session {session_index} -----------------------------------------*"
             message += "\n"
             for file_name in session:
-                message += f" *|* Highlight {clip_index} - Recorded "
+                message += f" *|*   Highlight {clip_index} - Recorded "
                 message += get_clip_age(file_name)
                 message += "\n"
                 clip_index += 1
