@@ -21,9 +21,30 @@ def slack_events():
         event = data['event']
         if event.get('type') == 'app_mention':
             return handle_mention(event)
-
     return Response(status=200)
 
+@app.route('/slack/command', methods=['POST'])
+def slack_commands():
+    command = request.form.get('command')
+    text = request.form.get('text')
+    user_id = request.form.get('user_id')
+    channel_id = request.form.get('channel_id')
+    print(command,text)
+    return Response(status=200)
+
+    # # Handle different commands
+    # if command == '/hello':
+    #     return handle_hello_command(text, user_id, channel_id)
+    # elif command == '/help':
+    #     return handle_help_command()
+    # # Add more command handlers as needed
+
+    # # Default response if command is not recognized
+    # return Response(
+    #     'Command not recognized. Try /help for available commands.',
+    #     status=200,
+    #     mimetype='application/json'
+    # )
 def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
