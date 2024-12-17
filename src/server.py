@@ -41,15 +41,15 @@ def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
     ts = event.get("ts")
-    user_id = event.get("user")
     
-    response_functions = ResponseFunctions({
-        'channel_id': channel,
-        'ts': ts,
-        'user_id': user_id,
-        'text': text
-    })
-    response_functions.reply_thread("Hello!")
+    message = f"Hey <@{event.get('user')}>!"
+    
+    client.chat_postMessage(
+        channel=channel,
+        text=message,
+        thread_ts=ts
+    )
+    
     return Response(status=200)
     
 def init_server():
