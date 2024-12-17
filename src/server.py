@@ -5,7 +5,7 @@ import os
 from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
-from server_utils import ResponseWithStatus
+from server_utils import ResponseFunctions, ResponseWithStatus
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 print(slack_token)
 
@@ -55,39 +55,3 @@ def handle_mention(event):
 def init_server():
     app.run(port=3000)
     
-class ResponseFunctions:
-    def __init__(self, form_data):
-        self.channel_id = form_data.get('channel_id')
-        self.user_id = form_data.get('user_id')
-        self.params = form_data.get('text').split()
-        self.command = form_data.get('command')
-        self.timestamp = form_data.get('ts')
-        print(self.timestamp)
-
-    def reply_to_thread(self, message: str, timestamp: str) -> dict:
-        return client.chat_postMessage(
-            channel=self.channel_id,
-            text=message,
-            thread_ts=timestamp
-        )
-        
-    def send_message(self, message: str) -> dict:
-        return client.chat_postMessage(
-            channel=self.channel_id,
-            text=message,
-        )
-        
-    def send_ephemeral(self, message: str) -> dict:
-        return client.chat_postEphemeral(
-            channel=self.channel_id,
-            text=message,
-            user=self.user_id
-        )
-        
-    def upload_file(self, message: str, filepath: str, timestamp: str) -> dict:
-        return client.files_upload_v2(
-            channels=self.channel_id,
-            file=filepath,
-            initial_comment=message,
-            thread_ts=timestamp
-        )
