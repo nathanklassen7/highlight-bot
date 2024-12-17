@@ -1,4 +1,5 @@
 import threading
+from endpoints.list_videos import get_sessions
 from server_utils import ResponseWithStatus, ResponseFunctions
 from slack_sdk.errors import SlackApiError
 from flask import Response
@@ -16,15 +17,26 @@ def send_all_clips(response_functions: ResponseFunctions):
     
     if len(response_functions.params) == 0:
         file_names_to_send = file_names
-        
-    for param in response_functions.params:
-        try:
-            index = int(param)
-            if index >= total_clips or index < 0:
-                return ResponseWithStatus(f"Clip {index} does not exist!")
-            file_names_to_send.append(file_names[index])
-        except:
-            return ResponseWithStatus(f"Invalid clip index '{param}'")
+    
+    if response_functions.params[0] == "sessions":
+        sessions = get_sessions(file_names)
+        for param in response_functions.params[1:]:
+            try:
+                index = int(param)
+                if index >= len(sessions) or index < 0:
+                    return ResponseWithStatus(f"Session {index} does not exist!")
+                file_names_to_send.extend(sessions[index])
+            except:
+                return ResponseWithStatus(f"Invalid clip index '{param}'")
+    else:
+        for param in response_functions.params:
+            try:
+                index = int(param)
+                if index >= total_clips or index < 0:
+                    return ResponseWithStatus(f"Clip {index} does not exist!")
+                file_names_to_send.append(file_names[index])
+            except:
+                return ResponseWithStatus(f"Invalid clip index '{param}'")
         
     try:
         file_count = len(file_names_to_send)

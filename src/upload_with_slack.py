@@ -9,6 +9,6 @@ def upload_videos_sequentially(upload_file, file_names):
             file_path = CLIP_DIRECTORY + file_name
             response = upload_file(file_name, file_path)
             print(response)
-            os.remove(file_path)
+            # os.remove(file_path)
     except SlackApiError as e:
         print(f"Error uploading file: {e.response['error']}")
