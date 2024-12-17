@@ -13,7 +13,6 @@ from video_utils import capture_video_data, start_camera, stop_camera, start_rec
 def main():
     time.sleep(1)
     threading.Thread(target=init_server, daemon=True).start()
-    return
     call([f'mkdir -p {CLIP_DIRECTORY}'],shell=True)
 
     if os.path.exists(timestamp_file):
