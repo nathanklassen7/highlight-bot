@@ -25,11 +25,13 @@ def slack_events():
 
 @app.route('/slack/command', methods=['POST'])
 def slack_commands():
-    command = request.form.get('command')
-    text = request.form.get('text')
-    user_id = request.form.get('user_id')
-    channel_id = request.form.get('channel_id')
-    print(command,text)
+    data = request.json
+    command = data.get('command')
+    text = data.get('text')
+    user_id = data.get('user_id')
+    channel_id = data.get('channel_id')
+    ts = data.get('ts')
+    print(command,text,channel_id,ts)
     return Response(status=200)
 
     # # Handle different commands
