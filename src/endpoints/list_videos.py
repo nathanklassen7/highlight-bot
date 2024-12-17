@@ -12,22 +12,30 @@ def list_videos():
 
         message = ''
         
-        sessions = [[files.pop(0)]]
-        for file_name in files:
-            if get_time_difference(file_name, sessions[-1][0]) < timedelta(seconds=10):
-                sessions[-1].append(file_name)
-            else:
-                sessions.append([file_name])
-                
-        print(sessions)
-        
-        for index,file_name in enumerate(files):
-            # Check if the file has a valid video format
-            message += f"Highlight {index} - Recorded "
-            message += get_clip_age(file_name)
+        sessions = get_sessions(files)
+
+        clip_index = 0
+        for session_index, session in enumerate(sessions):
+            message += f"Session {session_index}"
             message += "\n"
+            for file_name in session:
+                message += f" | Highlight {clip_index} - Recorded "
+                message += get_clip_age(file_name)
+                message += "\n"
+                clip_index += 1
+
         return ResponseWithStatus(message)
     except FileNotFoundError:
         return ResponseWithStatus("The directory does not exist.")
     except Exception as e:
         return ResponseWithStatus("An error occurred.")
+
+
+def get_sessions(files):
+    sessions = [[files.pop(0)]]
+    for file_name in files:
+        if get_time_difference(file_name, sessions[-1][0]) < timedelta(seconds=10):
+            sessions[-1].append(file_name)
+        else:
+            sessions.append([file_name])
+    return sessions
