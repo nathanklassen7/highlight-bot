@@ -1,3 +1,4 @@
+import json
 from flask import Flask, request, Response
 
 from slack_sdk import WebClient
@@ -26,8 +27,24 @@ def slack_events():
 
 @app.route('/slack/interact', methods=['POST'])
 def slack_interact():
-    data = request.form
-    print(data)
+    payload = json.loads(request.form['payload'])
+    
+    # Extract common useful information
+    user_id = payload['user']['id']
+    action = payload['actions'][0]  # Get the first action (button click)
+    
+    # Get specific action details
+    action_id = action['action_id']
+    block_id = action['block_id']
+    button_value = action['value']
+    
+    # Get the original message info
+    channel_id = payload['container']['channel_id']
+    message_ts = payload['container']['message_ts']
+    
+    # Response URL can be used to update the message later
+    response_url = payload['response_url']
+    print(f"Interact: {action_id} {block_id} {button_value} {channel_id} {message_ts} {response_url}")
     return ResponseWithStatus("Interact")
 
 @app.route('/slack/command', methods=['POST'])
