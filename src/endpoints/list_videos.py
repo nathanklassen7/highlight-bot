@@ -14,7 +14,7 @@ def list_videos():
         
         sessions = [[files.pop(0)]]
         for file_name in files:
-            if get_time_difference(file_name, sessions[-1][0]) < timedelta(minutes=10):
+            if get_time_difference(file_name, sessions[-1][0]) < timedelta(seconds=10):
                 sessions[-1].append(file_name)
             else:
                 sessions.append([file_name])
