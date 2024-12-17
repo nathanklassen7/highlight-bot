@@ -77,3 +77,5 @@ def get_blocks():
                 }
             )
             clip_index += 1
+            
+    return blocks
