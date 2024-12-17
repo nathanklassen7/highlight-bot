@@ -3,10 +3,10 @@ import threading
 from slack_sdk.errors import SlackApiError
 from consts import CLIP_DIRECTORY
 from get_sorted_videos import get_sorted_videos
-from server_utils import ResponseWithStatus
+from server_utils import ResponseWithStatus, ResponseFunctions
 from flask import Response
 
-def delete_clips(params: list[str]) -> Response:
+def delete_clips(response_functions: ResponseFunctions) -> Response:
     file_names = get_sorted_videos()
     total_clips = len(file_names)
     
@@ -15,10 +15,10 @@ def delete_clips(params: list[str]) -> Response:
     
     file_names_to_delete = []
     
-    if len(params) == 0:
+    if len(response_functions.params) == 0:
         file_names_to_delete = file_names
         
-    for param in params:
+    for param in response_functions.params:
         try:
             index = int(param)
             if index >= total_clips or index < 0:
