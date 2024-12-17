@@ -6,7 +6,7 @@ import os
 from endpoints.delete_all_clips import delete_clips
 from endpoints.list_videos import list_videos
 from endpoints.send_all_clips import send_all_clips
-from server_utils import respond_with_status_message
+from server_utils import ResponseWithStatus
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 print(slack_token)
 
@@ -34,8 +34,6 @@ def slack_commands():
     user_id = data.get('user_id')
     channel_id = data.get('channel_id')
     ts = data.get('ts')
-    print(data)
-    return Response(status=200)
     
     send_message, upload_file, send_ephemeral = build_response_functions(channel_id, ts, user_id)
     params = text.split()
@@ -54,7 +52,8 @@ def slack_commands():
     # # Add more command handlers as needed
 
     # Default response if command is not recognized
-    return respond_with_status_message('Command not recognized. Try /help for available commands.')
+    return ResponseWithStatus('Command not recognized. Try /help for available commands.')
+
 def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
@@ -74,8 +73,7 @@ def handle_mention(event):
     if command == 'delete':
         params = params[2:]
         return delete_clips(params,reply_thread)
-    reply_thread("Invalid command!")
-    return Response(status=200)
+    return ResponseWithStatus("Invalid command!")
     
 def init_server():
     app.run(port=3000)
