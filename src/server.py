@@ -26,7 +26,7 @@ def slack_events():
 
 @app.route('/slack/interact', methods=['POST'])
 def slack_interact():
-    data = request.json
+    data = request.form
     print(data)
     return ResponseWithStatus("Interact")
 
