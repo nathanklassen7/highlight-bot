@@ -26,6 +26,13 @@ class ResponseFunctions:
             text=message,
         )
         
+    def send_message_with_blocks(self, blocks: list) -> dict:
+        return client.chat_postEphemeral(
+            channel=self.channel_id,
+            user=self.user_id,
+            blocks=blocks
+        )
+        
     def send_ephemeral(self, message: str) -> dict:
         return client.chat_postEphemeral(
             channel=self.channel_id,

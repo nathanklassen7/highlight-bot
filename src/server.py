@@ -30,7 +30,7 @@ def slack_commands():
     response_functions = ResponseFunctions(data)
     
     if response_functions.command == '/hl-list':
-        return list_videos()
+        return list_videos(response_functions)
     if response_functions.command == '/hl-collect':
         return send_all_clips(response_functions)
     if response_functions.command == '/hl-delete':
