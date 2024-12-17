@@ -3,7 +3,7 @@ from get_clip_age import get_clip_age, get_time_difference
 from get_sorted_videos import get_sorted_videos
 from server_utils import ResponseFunctions, ResponseWithStatus
 
-def list_videos(response_functions: ResponseFunctions):
+def list_videos(response_functions: ResponseFunctions, timestamp: str | None = None):
     try:
         # List all files in the directory
         files = get_sorted_videos()
@@ -58,7 +58,7 @@ def list_videos(response_functions: ResponseFunctions):
                 )
                 clip_index += 1
 
-        return response_functions.send_message_with_blocks(blocks)
+        return response_functions.send_message_with_blocks(blocks, timestamp)
     except FileNotFoundError:
         return ResponseWithStatus("The directory does not exist.")
     except Exception as e:
