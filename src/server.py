@@ -44,9 +44,9 @@ def slack_commands():
     if command == '/hl-list':
         return list_videos(send_ephemeral)
     if command == '/hl-collect':
-        return send_all_clips(text,send_message,upload_file)
+        return send_all_clips(params,upload_file)
     if command == '/hl-delete':
-        return delete_clips(text,send_message)
+        return delete_clips(params)
     # # Handle different commands
     # if command == '/hello':
     #     return handle_hello_command(text, user_id, channel_id)

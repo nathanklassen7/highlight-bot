@@ -4,7 +4,9 @@ from slack_sdk.errors import SlackApiError
 from consts import CLIP_DIRECTORY
 from get_sorted_videos import get_sorted_videos
 from server_utils import ResponseWithStatus
-def delete_clips(params):
+from flask import Response
+
+def delete_clips(params: list[str]) -> Response:
     file_names = get_sorted_videos()
     total_clips = len(file_names)
     
