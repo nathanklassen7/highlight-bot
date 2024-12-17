@@ -41,11 +41,11 @@ def slack_commands():
     send_ephemeral = response_functions['send_ephemeral']
     params = text.split()
     
-    if command == 'hl-list':
+    if command == '/hl-list':
         return list_videos(send_ephemeral)
-    if command == 'hl-collect':
+    if command == '/hl-collect':
         return send_all_clips(text,send_message,upload_file)
-    if command == 'hl-delete':
+    if command == '/hl-delete':
         return delete_clips(text,send_message)
     # # Handle different commands
     # if command == '/hello':
