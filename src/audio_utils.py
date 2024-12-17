@@ -34,11 +34,15 @@ def stop_recording_audio():
     client.send(STOP)
 
 def capture_audio_data():
+    
     client.send(START)
     client.send(STOP)
     
-    audio_duration = float(check_output(['ffprobe', '-i', AUDIO_BUFFER_FILE, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0']).decode('utf-8').strip())
-    audio_end_time = get_timestamp()
-    audio_start_time = audio_end_time - audio_duration
+    try:
+        audio_duration = float(check_output(['ffprobe', '-i', AUDIO_BUFFER_FILE, '-show_entries', 'format=duration', '-v', 'quiet', '-of', 'csv=p=0']).decode('utf-8').strip())
+        audio_end_time = get_timestamp()
+        audio_start_time = audio_end_time - audio_duration
 
-    return audio_start_time
+        return audio_start_time
+    except:
+        return 0
