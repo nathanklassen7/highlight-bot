@@ -1,3 +1,4 @@
+import requests
 from flask import Response
 from slack_sdk import WebClient
 import os
@@ -77,3 +78,6 @@ def update_message_blocks(channel: str, timestamp: str, blocks: list):
         ts=timestamp,
         blocks=blocks
     )
+    
+def update_message_with_response_url(response_url: str, blocks: list):
+    requests.post(response_url, json={"blocks": blocks})
