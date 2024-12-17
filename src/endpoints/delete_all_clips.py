@@ -1,17 +1,15 @@
 import os
 import threading
 from slack_sdk.errors import SlackApiError
-from flask import Response
 from consts import CLIP_DIRECTORY
 from get_sorted_videos import get_sorted_videos
-
-def delete_clips(params, reply_thread):
+from server_utils import ResponseWithStatus
+def delete_clips(params, send_message, user_id):
     file_names = get_sorted_videos()
     total_clips = len(file_names)
     
     if total_clips==0:
-        reply_thread("No clips saved.")
-        return Response(status=200)
+        return ResponseWithStatus('No clips saved.')
     
     file_names_to_delete = []
     
@@ -22,22 +20,20 @@ def delete_clips(params, reply_thread):
         try:
             index = int(param)
             if index >= total_clips or index < 0:
-                reply_thread(f"Clip {index} does not exist!")
-                return Response(status=200)
+                return ResponseWithStatus(f"Clip {index} does not exist!")
             file_names_to_delete.append(file_names[index])
         except:
-            reply_thread(f"Invalid clip index '{param}'")
-            return Response(status=200)
+            return ResponseWithStatus(f"Invalid clip index '{param}'")
         
     try:
         for file_name in file_names_to_delete:
             os.remove(CLIP_DIRECTORY + file_name)
         files_to_delete_count = len(file_names_to_delete)
         if files_to_delete_count == 1:
-            reply_thread("Deleted 1 clip!")
+            return ResponseWithStatus("Deleted 1 clip!")
         else:
-            reply_thread(f"Deleted {files_to_delete_count} clips!")
-        return Response(status=200)
+            return ResponseWithStatus(f"Deleted {files_to_delete_count} clips!")
+
     except SlackApiError as e:
         print(f"Error posting message: {e.response['error']}")
-        return Response(status=500)
+        return ResponseWithStatus("Error deleting clips!")
