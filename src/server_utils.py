@@ -63,7 +63,7 @@ def post_message(channel: str, text: str, thread_ts: str = None):
         thread_ts=thread_ts
     )
     
-def get_message(channel: str, timestamp: str):
+def get_message(channel: str, timestamp: float):
     return client.conversations_history(
         channel=channel,
         oldest=timestamp,
