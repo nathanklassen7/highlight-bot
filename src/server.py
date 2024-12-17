@@ -24,6 +24,12 @@ def slack_events():
             return handle_mention(event)
     return ResponseWithStatus("Invalid event type")
 
+@app.route('/slack/interact', methods=['POST'])
+def slack_interact():
+    data = request.json
+    print(data)
+    return ResponseWithStatus("Interact")
+
 @app.route('/slack/command', methods=['POST'])
 def slack_commands():
     data = request.form
