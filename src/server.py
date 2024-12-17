@@ -35,7 +35,10 @@ def slack_commands():
     channel_id = data.get('channel_id')
     ts = data.get('ts')
     
-    send_message, upload_file, send_ephemeral = build_response_functions(channel_id, ts, user_id)
+    response_functions = build_response_functions(channel_id, ts, user_id)
+    send_message = response_functions['send_message']
+    upload_file = response_functions['upload_file']
+    send_ephemeral = response_functions['send_ephemeral']
     params = text.split()
     
     if command == 'hl-list':
@@ -43,7 +46,7 @@ def slack_commands():
     if command == 'hl-collect':
         return send_all_clips(text,send_message,upload_file)
     if command == 'hl-delete':
-        return delete_clips(text,send_message,user_id)
+        return delete_clips(text,send_message)
     # # Handle different commands
     # if command == '/hello':
     #     return handle_hello_command(text, user_id, channel_id)
@@ -59,7 +62,9 @@ def handle_mention(event):
     channel = event.get("channel")
     ts = event.get("ts")
     user_id = event.get("user")
-    reply_thread, upload_file = build_response_functions(channel, ts, user_id)
+    response_functions = build_response_functions(channel, ts, user_id)
+    reply_thread = response_functions['reply_thread']
+    upload_file = response_functions['upload_file']
 
     params = text.split()
     
@@ -78,10 +83,7 @@ def handle_mention(event):
 def init_server():
     app.run(port=3000)
     
-def build_response_functions(channel_id: str, timestamp: str, user_id: str) -> tuple[
-    Callable[[str], dict],  # reply_thread type
-    Callable[[str, str], dict]  # upload_file type
-]:
+def build_response_functions(channel_id: str, timestamp: str, user_id: str) -> dict[str, Callable]:
     def reply_thread(message: str) -> dict:
         return client.chat_postMessage(
             channel=channel_id,
@@ -110,4 +112,10 @@ def build_response_functions(channel_id: str, timestamp: str, user_id: str) -> t
             initial_comment=message,
             thread_ts=timestamp
         )
-    return reply_thread, upload_file
+    
+    return {
+        'reply_thread': reply_thread,
+        'send_message': send_message, 
+        'send_ephemeral': send_ephemeral,
+        'upload_file': upload_file
+    }
