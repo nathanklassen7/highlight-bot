@@ -20,6 +20,8 @@ def main():
     try:
         write_led('on', True)
         while True:
+            time.sleep(1)
+        while True:
             start_camera()
             indicate_recording_start()
             while True:
