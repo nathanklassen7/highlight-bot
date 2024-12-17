@@ -26,6 +26,7 @@ def slack_events():
 @app.route('/slack/command', methods=['POST'])
 def slack_commands():
     data = request.form
+    print(data)
     command = data.get('command')
     text = data.get('text')
     user_id = data.get('user_id')
