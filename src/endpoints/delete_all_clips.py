@@ -7,7 +7,6 @@ from server_utils import ResponseWithStatus
 from flask import Response
 
 def delete_clips(params: list[str]) -> Response:
-    print(params)
     file_names = get_sorted_videos()
     total_clips = len(file_names)
     
