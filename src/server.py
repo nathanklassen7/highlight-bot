@@ -1,14 +1,14 @@
+import json
+from file_management.get_blocks_from_files import get_blocks_from_files
+from file_management.get_sessions import get_sessions
 from flask import Flask, request, Response
 
-from slack_sdk import WebClient
 import os
-from endpoints.delete_all_clips import delete_clips
-from endpoints.list_videos import list_videos
-from endpoints.send_all_clips import send_all_clips
+from file_management.delete_clips import delete_all_clips, delete_clip 
+from file_management.send_all_clips import start_sending_clips
+from server_utils import ResponseWithStatus, post_ephemeral_blocks, post_message_to_channel_or_thread, post_public_blocks, update_message_with_response_url
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 print(slack_token)
-
-client = WebClient(token=slack_token)
 
 app = Flask(__name__)
 
@@ -21,63 +21,98 @@ def slack_events():
         event = data['event']
         if event.get('type') == 'app_mention':
             return handle_mention(event)
-    return Response(status=200)
+    return ResponseWithStatus("Invalid event type")
+
+@app.route('/slack/interact', methods=['POST'])
+def slack_interact():
+    payload = json.loads(request.form['payload'])
+    
+    # Extract common useful information
+    user_id = payload['user']['id']
+    action = payload['actions'][0]  # Get the first action (button click)
+    
+    # Get specific action details
+    action_id = action['action_id']
+    button_value = action['value']
+    # Get the original message info
+    channel_id = payload['container']['channel_id']
+    
+    if action_id == "null":
+        return ResponseWithStatus("")
+    
+    if action_id == "delete-all":
+        delete_all_clips()
+        new_blocks = get_blocks_from_files()
+        update_message_with_response_url(payload['response_url'], new_blocks, "Deleted all clips!")
+        return ResponseWithStatus("")
+
+    if action_id == "collect-all":
+        sessions = get_sessions()
+        collecting_indices = [i for i in range(len(sessions))]
+        in_progress_blocks = get_blocks_from_files(currently_collecting=collecting_indices)
+        files_to_send = [file_name for session in sessions for file_name in session]
+        update_message_with_response_url(payload['response_url'], in_progress_blocks, "Collecting...")
+        start_sending_clips(channel_id, files_to_send, payload['response_url'], in_progress_blocks)
+        return ResponseWithStatus("")
+    
+    if action_id == "refresh":
+        new_blocks = get_blocks_from_files()
+        update_message_with_response_url(payload['response_url'], new_blocks, "Refreshed!")
+        return ResponseWithStatus("")
+    
+    if action_id == "dismiss":
+        update_message_with_response_url(payload['response_url'],[], "Okay!")
+        return ResponseWithStatus("")
+    
+    if action_id == "collect-session":
+        session_index = int(button_value)
+        print(f"Collecting session {session_index}")
+        files_to_send = get_sessions()[session_index]
+        in_progress_blocks = get_blocks_from_files(currently_collecting=[session_index])
+        update_message_with_response_url(payload['response_url'], in_progress_blocks, "Collecting...")
+        start_sending_clips(channel_id, files_to_send, payload['response_url'], in_progress_blocks)
+        return ResponseWithStatus("")
+    
+    if action_id == "delete-clip":
+        delete_clip(button_value)
+        new_blocks = get_blocks_from_files()
+        update_message_with_response_url(payload['response_url'], new_blocks, "Deleted clip!")
+        return ResponseWithStatus("")
+    
+    return ResponseWithStatus("Interact")
 
 @app.route('/slack/command', methods=['POST'])
 def slack_commands():
-    command = request.form.get('command')
-    text = request.form.get('text')
-    user_id = request.form.get('user_id')
-    channel_id = request.form.get('channel_id')
-    print(command,text)
-    return Response(status=200)
+    data = request.form
 
-    # # Handle different commands
-    # if command == '/hello':
-    #     return handle_hello_command(text, user_id, channel_id)
-    # elif command == '/help':
-    #     return handle_help_command()
-    # # Add more command handlers as needed
+    
+    if data['command'] == '/hl':
+        blocks = get_blocks_from_files()
+        is_public = data['text'] == 'public'
+        if is_public:
+            post_public_blocks(data['channel_id'], blocks)
+        else:
+            post_ephemeral_blocks(data['channel_id'], blocks, data['user_id'])
+        return ResponseWithStatus('')
+    return ResponseWithStatus('Command not recognized. Try /help for available commands.')
 
-    # # Default response if command is not recognized
-    # return Response(
-    #     'Command not recognized. Try /help for available commands.',
-    #     status=200,
-    #     mimetype='application/json'
-    # )
 def handle_mention(event):
     text = event.get('text')
     channel = event.get("channel")
     ts = event.get("ts")
-
-    def reply_thread(message):
-        return client.chat_postMessage(
-            channel=channel,
-            text=message,
-            thread_ts=ts
-        )
-    def upload_file(message,filepath):
-        return client.files_upload_v2(
-            channels=channel,
-            file=filepath,
-            initial_comment=message,
-            thread_ts=ts
-        )
-
-    params = text.split()
     
-    command = params[1]
-    # Check if the message contains a specific command
-    if command == 'collect':
-        params = params[2:]
-        return send_all_clips(params,reply_thread,upload_file)
-    if command == 'list':
-        return list_videos(reply_thread)
-    if command == 'delete':
-        params = params[2:]
-        return delete_clips(params,reply_thread)
-    reply_thread("Invalid command!")
+    message = f"Hey <@{event.get('user')}>!"
+    
+    post_message_to_channel_or_thread(
+        channel=channel,
+        text=message,
+        thread_ts=ts
+    )
+    
     return Response(status=200)
     
 def init_server():
     app.run(port=3000)
+    
+if __name__ == "__main__":
+    init_server()
