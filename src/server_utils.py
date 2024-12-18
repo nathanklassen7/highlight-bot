@@ -1,3 +1,4 @@
+from typing import Optional
 import requests
 from flask import Response
 from slack_sdk import WebClient
@@ -7,77 +8,35 @@ client = WebClient(token=os.environ.get('SLACK_BOT_TOKEN'))
 def ResponseWithStatus(message):
     return Response(message,status=200,mimetype='text/plain')
 
-class ResponseFunctions:
-    def __init__(self, form_data):
-        self.channel_id = form_data.get('channel_id')
-        self.user_id = form_data.get('user_id')
-        self.params = form_data.get('text').split()
-        self.command = form_data.get('command')
-
-    def reply_to_thread(self, message: str, timestamp: str) -> dict:
-        return client.chat_postMessage(
-            channel=self.channel_id,
-            text=message,
-            thread_ts=timestamp
-        )
-    
-    def send_message(self, message: str) -> dict:
-        return client.chat_postMessage(
-            channel=self.channel_id,
-            text=message,
-        )
-        
-    def send_message_with_blocks(self, blocks: list, timestamp: str | None = None) -> dict:
-        if timestamp is None:
-            return client.chat_postEphemeral(
-                channel=self.channel_id,
-                user=self.user_id,
-                blocks=blocks,
-            )
-        else:
-            return client.chat_update(
-                channel=self.channel_id,
-                ts=timestamp,
-                blocks=blocks,
-            )
-        
-    def send_ephemeral(self, message: str) -> dict:
-        return client.chat_postEphemeral(
-            channel=self.channel_id,
-            text=message,
-            user=self.user_id,
-        )
-        
-    def upload_file(self, message: str, filepath: str, timestamp: str) -> dict:
-        return client.files_upload_v2(
-            channels=self.channel_id,
-            file=filepath,
-            initial_comment=message,
-            thread_ts=timestamp
-        )
-
-
-def post_message(channel: str, text: str, thread_ts: str = None):
+def post_message_to_channel_or_thread(channel: str, text: str, thread_ts: Optional[str] = None):
     return client.chat_postMessage(
         channel=channel,
         text=text,
         thread_ts=thread_ts
     )
     
-def get_message(channel: str, timestamp: float):
-    return client.conversations_history(
+def post_file_to_channel_or_thread(channel: str, filepath: str, message: str, thread_ts: Optional[str] = None):
+    return client.files_upload_v2(
         channel=channel,
-        # oldest=timestamp,
-        limit=1,
-        inclusive=True
+        file=filepath,
+        initial_comment=message,
+        thread_ts=thread_ts
     )
-    
-def update_message_blocks(channel: str, timestamp: str, blocks: list):
-    return client.chat_update(
+
+def post_ephemeral_blocks(channel: str, blocks: list, user_id: str):
+    return client.chat_postEphemeral(
         channel=channel,
-        ts=timestamp,
-        blocks=blocks
+        blocks=blocks,
+        user=user_id,
+        text='Highlights'
     )
-    
-def update_message_with_response_url(response_url: str, blocks: list):
-    requests.post(response_url, json={"blocks": blocks})
+
+def post_public_blocks(channel: str, blocks: list):
+    return client.chat_postMessage(
+        channel=channel,
+        blocks=blocks,
+        text='Highlights'
+    )
+
+def update_message_with_response_url(response_url: str, blocks: list, message: str):
+    return requests.post(response_url, json={"blocks": blocks, "text": message})
