@@ -38,7 +38,13 @@ def main():
                 indicate_writing()
                 
                 video_start_time = capture_video_data()
+                
                 audio_start_time = capture_audio_data()
+                
+                if audio_start_time == 0:
+                    print("Error capturing audio")
+                    indicate_save_error()
+                    continue
                 
                 encode_result = encode_video(audio_start_time, video_start_time)
                 

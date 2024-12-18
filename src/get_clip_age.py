@@ -20,11 +20,19 @@ def get_clip_age(file_name):
     message = ""
     
     if days:
-        message += f"{days} days, "
+        message += f"{days} day{days > 1 and 's' or ''}, "
     if hours:
-        message += f"{hours} hours, "
+        message += f"{hours} hour{hours > 1 and 's' or ''}, "
     if minutes:
-        message += f"{minutes} minutes, "
-    message += f"{seconds} seconds ago"
+        message += f"{minutes} minute{minutes > 1 and 's' or ''}, "
+    message += f"{seconds} second{seconds > 1 and 's' or ''} ago"
     
     return message
+
+def get_time_difference(file_name1, file_name2):
+    timestamp_str1 = file_name1.split('.')[0]
+    timestamp_str2 = file_name2.split('.')[0]
+    recorded_time1 = datetime.strptime(timestamp_str1, '%Y-%m-%d-%H:%M:%S')
+    recorded_time2 = datetime.strptime(timestamp_str2, '%Y-%m-%d-%H:%M:%S')
+    time_difference = recorded_time1 - recorded_time2
+    return time_difference

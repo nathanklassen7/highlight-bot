@@ -5,6 +5,7 @@ __pycache__/
 env/
 
 clips/
+testclips/
 buffer.h264
 buffer.wav
 time.tme
