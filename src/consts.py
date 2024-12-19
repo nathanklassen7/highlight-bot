@@ -1,4 +1,1 @@
-
-CHANNEL_ID = "C07D4QP10TH"
-
 CLIP_DIRECTORY = 'clips/'

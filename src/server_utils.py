@@ -3,6 +3,7 @@ import requests
 from flask import Response
 from slack_sdk import WebClient
 import os
+
 client = WebClient(token=os.environ.get('SLACK_BOT_TOKEN'))
 
 def ResponseWithStatus(message):
