@@ -1,6 +1,6 @@
 
 from typing import Callable, Optional
-from consts import CHANNEL_ID, CLIP_DIRECTORY
+from consts import CLIP_DIRECTORY
 from slack_sdk.errors import SlackApiError
 import os
 

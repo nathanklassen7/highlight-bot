@@ -17,3 +17,7 @@ def get_sessions():
         else:
             sessions.append([file_name])
     return sessions
+
+def get_session_at_index(index: int):
+    sessions = get_sessions()
+    return sessions[index]

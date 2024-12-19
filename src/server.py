@@ -1,12 +1,15 @@
 import json
-from file_management.get_blocks_from_files import get_blocks_from_files
-from file_management.get_sessions import get_sessions
-from flask import Flask, request, Response
-
 import os
-from file_management.delete_clips import delete_all_clips, delete_clip 
-from file_management.send_all_clips import start_sending_clips
-from server_utils import ResponseWithStatus, post_ephemeral_blocks, post_message_to_channel_or_thread, post_public_blocks, update_message_with_response_url
+
+from interactions.BlockInteraction import BlockInteraction
+from file_management.delete_clips import delete_all_clips, delete_clip
+from file_management.file_read_lock import file_read_lock
+from file_management.get_blocks_from_files import get_blocks_from_files
+from flask import Flask, request, Response
+from interactions.collect_session_or_all_clips import collect_session_or_all
+from server_utils import (ResponseWithStatus, post_ephemeral_blocks,
+                         post_message_to_channel_or_thread, post_public_blocks)
+
 slack_token = os.environ.get('SLACK_BOT_TOKEN')
 print(slack_token)
 
@@ -26,57 +29,67 @@ def slack_events():
 @app.route('/slack/interact', methods=['POST'])
 def slack_interact():
     payload = json.loads(request.form['payload'])
+    interaction = BlockInteraction(payload)
     
-    # Extract common useful information
-    user_id = payload['user']['id']
-    action = payload['actions'][0]  # Get the first action (button click)
-    
-    # Get specific action details
-    action_id = action['action_id']
-    button_value = action['value']
-    # Get the original message info
-    channel_id = payload['container']['channel_id']
-    
-    if action_id == "null":
+    if interaction.action_id == "null":
         return ResponseWithStatus("")
     
-    if action_id == "delete-all":
-        delete_all_clips()
-        new_blocks = get_blocks_from_files()
-        update_message_with_response_url(payload['response_url'], new_blocks, "Deleted all clips!")
+    if file_read_lock.locked():
+        interaction.update_with_message("I'm busy right now, try again later!")
+        return ResponseWithStatus("")
+    
+    file_read_lock.acquire()
+    
+    if interaction.action_id == "refresh":
+        try:
+            interaction.refresh_blocks()
+        except Exception as e:
+            interaction.update_with_message(f"Error refreshing blocks: {e}")
+        finally:
+            file_read_lock.release()
+        return ResponseWithStatus("")
+    
+    if interaction.action_id == "dismiss":
+        try:
+            interaction.update_with_message("Okay!")
+        finally:
+            file_read_lock.release()
+        return ResponseWithStatus("")
+    
+    if interaction.action_id == "delete-all":
+        try: 
+            delete_all_clips()
+            interaction.update_with_message("Deleted all clips!")
+        except Exception as e:
+            interaction.update_with_message(f"Error deleting all clips: {e}")
+        finally:
+            file_read_lock.release()
+        return ResponseWithStatus("")
+    
+    if interaction.action_id == "delete-clip":
+        try:
+            delete_clip(interaction.button_value)
+            interaction.refresh_blocks()
+        except Exception as e:
+            interaction.update_with_message(f"Error deleting clip: {e}")
+        finally:
+            file_read_lock.release()
         return ResponseWithStatus("")
 
-    if action_id == "collect-all":
-        sessions = get_sessions()
-        collecting_indices = [i for i in range(len(sessions))]
-        in_progress_blocks = get_blocks_from_files(currently_collecting=collecting_indices)
-        files_to_send = [file_name for session in sessions for file_name in session]
-        update_message_with_response_url(payload['response_url'], in_progress_blocks, "Collecting...")
-        start_sending_clips(channel_id, files_to_send, payload['response_url'], in_progress_blocks)
+    if interaction.action_id == "collect-all":
+        try:
+            collect_session_or_all(interaction, collect_all=True)
+        except Exception as e:
+            file_read_lock.release()
+            interaction.update_with_message(f"Error collecting all clips: {e}")
         return ResponseWithStatus("")
     
-    if action_id == "refresh":
-        new_blocks = get_blocks_from_files()
-        update_message_with_response_url(payload['response_url'], new_blocks, "Refreshed!")
-        return ResponseWithStatus("")
-    
-    if action_id == "dismiss":
-        update_message_with_response_url(payload['response_url'],[], "Okay!")
-        return ResponseWithStatus("")
-    
-    if action_id == "collect-session":
-        session_index = int(button_value)
-        print(f"Collecting session {session_index}")
-        files_to_send = get_sessions()[session_index]
-        in_progress_blocks = get_blocks_from_files(currently_collecting=[session_index])
-        update_message_with_response_url(payload['response_url'], in_progress_blocks, "Collecting...")
-        start_sending_clips(channel_id, files_to_send, payload['response_url'], in_progress_blocks)
-        return ResponseWithStatus("")
-    
-    if action_id == "delete-clip":
-        delete_clip(button_value)
-        new_blocks = get_blocks_from_files()
-        update_message_with_response_url(payload['response_url'], new_blocks, "Deleted clip!")
+    if interaction.action_id == "collect-session":
+        try:
+            collect_session_or_all(interaction, collect_all=False)
+        except Exception as e:
+            file_read_lock.release()
+            interaction.update_with_message(f"Error collecting session: {e}")
         return ResponseWithStatus("")
     
     return ResponseWithStatus("Interact")
@@ -84,7 +97,6 @@ def slack_interact():
 @app.route('/slack/command', methods=['POST'])
 def slack_commands():
     data = request.form
-
     
     if data['command'] == '/hl':
         blocks = get_blocks_from_files()
@@ -97,7 +109,6 @@ def slack_commands():
     return ResponseWithStatus('Command not recognized. Try /help for available commands.')
 
 def handle_mention(event):
-    text = event.get('text')
     channel = event.get("channel")
     ts = event.get("ts")
     

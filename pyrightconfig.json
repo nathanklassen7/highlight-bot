@@ -1,0 +1,4 @@
+{
+  "venvPath": ".",
+  "venv": "env" // or whatever your virtual environment directory is named
+}
