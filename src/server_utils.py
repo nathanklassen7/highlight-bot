@@ -41,6 +41,3 @@ def post_public_blocks(channel: str, blocks: list):
 
 def update_message_with_response_url(response_url: str, blocks: list, message: str):
     return requests.post(response_url, json={"blocks": blocks, "text": message})
-
-
-# test comment here 
