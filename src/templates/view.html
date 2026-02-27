@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ filename }} - Video Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: black;
+        }
+        .trim-controls {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .time-display {
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900 truncate">{{ filename }}</h1>
+                <a href="/" class="text-blue-600 hover:text-blue-800">← Back to all clips</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <!-- Video Player -->
+            <div class="video-container">
+                <video id="videoPlayer" controls>
+                    <source src="/clips/{{ filename }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <!-- Trim Controls -->
+            <div class="p-6">
+                <div class="trim-controls">
+                    <h3 class="text-lg font-semibold text-white mb-4">Trim Video</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300">Start Time</label>
+                            <div class="mt-1 flex items-center space-x-2">
+                                <input type="range" id="startTime" min="0" max="100" value="0" 
+                                       class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                                <span id="startTimeDisplay" class="time-display text-white">00:00</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300">End Time</label>
+                            <div class="mt-1 flex items-center space-x-2">
+                                <input type="range" id="endTime" min="0" max="100" value="100" 
+                                       class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                                <span id="endTimeDisplay" class="time-display text-white">00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="trimButton" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Trim Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Details -->
+                <div class="mt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Video Details</h2>
+                            <dl class="space-y-2">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">File Name</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ filename }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">File Size</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ (size / 1024 / 1024)|round(2) }} MB</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Last Modified</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Session Information</h2>
+                            <dl class="space-y-2">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Session Number</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">Session {{ session_index + 1 }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Clips in Session</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ session|length }} clips</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Download Buttons -->
+                    <div class="mt-6 flex space-x-4">
+                        <a href="/clips/{{ filename }}" 
+                           download
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Download Original
+                        </a>
+                        <a id="trimmedDownload" 
+                           href="#"
+                           class="hidden inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Download Trimmed
+                        </a>
+                    </div>
+
+                    <!-- Other Clips in Session -->
+                    {% if session|length > 1 %}
+                    <div class="mt-8">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Other Clips in This Session</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {% for clip in session %}
+                                {% if clip.filename != filename %}
+                                <a href="/view/{{ clip.filename }}" class="block">
+                                    <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ clip.filename }}</p>
+                                        <p class="text-xs text-gray-500">{{ (clip.size / 1024 / 1024)|round(2) }} MB</p>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('videoPlayer');
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const startTimeDisplay = document.getElementById('startTimeDisplay');
+            const endTimeDisplay = document.getElementById('endTimeDisplay');
+            const trimButton = document.getElementById('trimButton');
+            const trimmedDownload = document.getElementById('trimmedDownload');
+            
+            // Update time displays when video metadata is loaded
+            video.addEventListener('loadedmetadata', function() {
+                const duration = video.duration;
+                startTimeInput.max = duration * 60;
+                endTimeInput.max = duration * 60;
+                endTimeInput.value = duration * 60;
+                updateTimeDisplays();
+            });
+
+            // Update time displays when sliders are moved
+            startTimeInput.addEventListener('input', function() {
+                if (parseFloat(startTimeInput.value) >= parseFloat(endTimeInput.value)) {
+                    startTimeInput.value = endTimeInput.value - 1;
+                }
+                updateTimeDisplays();
+            });
+
+            endTimeInput.addEventListener('input', function() {
+                if (parseFloat(endTimeInput.value) <= parseFloat(startTimeInput.value)) {
+                    endTimeInput.value = parseFloat(startTimeInput.value) + 1;
+                }
+                updateTimeDisplays();
+            });
+
+            function updateTimeDisplays() {
+                startTimeDisplay.textContent = formatTime(parseFloat(startTimeInput.value));
+                endTimeDisplay.textContent = formatTime(parseFloat(endTimeInput.value));
+            }
+
+            function formatTime(frames) {
+                const seconds = Math.floor(frames/60);
+                const remainingFrames = Math.round((frames - seconds*60));
+                return `${seconds.toString().padStart(2, '0')}:${remainingFrames.toString().padStart(2, '0')}`;
+            }
+
+            // Handle trim button click
+            trimButton.addEventListener('click', async function() {
+                const startTime = parseFloat(startTimeInput.value) / 60;
+                const endTime = parseFloat(endTimeInput.value) / 60;
+                
+                try {
+                    const response = await fetch('/trim/{{ filename }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            start_time: startTime,
+                            end_time: endTime
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        trimmedDownload.href = data.download_url;
+                        trimmedDownload.classList.remove('hidden');
+                    } else {
+                        alert('Error trimming video');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error trimming video');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Clips Browser</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .video-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .video-card:hover {
+            transform: translateY(-2px);
+        }
+        .video-container {
+            position: relative;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .session-header {
+            background: #f3f4f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-bold text-gray-900">Video Clips Browser</h1>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div id="sessions-container">
+            {% for session in sessions %}
+            <div class="session-section fade-in">
+                <div class="session-header">
+                    <h2 class="text-xl font-semibold text-gray-900">Session {{ loop.index }}</h2>
+                    <p class="text-sm text-gray-500">{{ session|length }} clips</p>
+                </div>
+                <div class="video-grid">
+                    {% for clip in session %}
+                    <div class="video-card fade-in">
+                        <div class="video-container">
+                            <video controls preload="metadata">
+                                <source src="/clips/{{ clip.filename }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold text-gray-900 truncate">
+                                <a href="/view/{{ clip.filename }}" class="hover:text-blue-600">{{ clip.filename }}</a>
+                            </h3>
+                            <p class="text-sm text-gray-500">
+                                Size: {{ (clip.size / 1024 / 1024)|round(2) }} MB
+                            </p>
+                            <div class="mt-4 flex space-x-2">
+                                <a href="/view/{{ clip.filename }}" 
+                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    View
+                                </a>
+                                <a href="/clips/{{ clip.filename }}" 
+                                   download
+                                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Handle real-time updates
+        socket.on('clips_update', function(sessionsData) {
+            const sessions = JSON.parse(sessionsData);
+            const sessionsContainer = document.getElementById('sessions-container');
+            
+            // Clear existing content
+            sessionsContainer.innerHTML = '';
+            
+            // Add new sessions with fade-in animation
+            sessions.forEach((session, sessionIndex) => {
+                const sessionSection = document.createElement('div');
+                sessionSection.className = 'session-section fade-in';
+                sessionSection.innerHTML = `
+                    <div class="session-header">
+                        <h2 class="text-xl font-semibold text-gray-900">Session ${sessionIndex + 1}</h2>
+                        <p class="text-sm text-gray-500">${session.length} clips</p>
+                    </div>
+                    <div class="video-grid">
+                        ${session.map(clip => `
+                            <div class="video-card fade-in">
+                                <div class="video-container">
+                                    <video controls preload="metadata">
+                                        <source src="/clips/${clip.filename}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 truncate">
+                                        <a href="/view/${clip.filename}" class="hover:text-blue-600">${clip.filename}</a>
+                                    </h3>
+                                    <p class="text-sm text-gray-500">
+                                        Size: ${(clip.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                    <div class="mt-4 flex space-x-2">
+                                        <a href="/view/${clip.filename}" 
+                                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            View
+                                        </a>
+                                        <a href="/clips/${clip.filename}" 
+                                           download
+                                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                sessionsContainer.appendChild(sessionSection);
+            });
+            
+            // Reinitialize lazy loading for new videos
+            initializeLazyLoading();
+        });
+
+        // Initialize lazy loading
+        function initializeLazyLoading() {
+            const videos = document.querySelectorAll('video');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const video = entry.target;
+                        video.src = video.querySelector('source').src;
+                        observer.unobserve(video);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            videos.forEach(video => observer.observe(video));
+        }
+
+        // Initial lazy loading setup
+        document.addEventListener('DOMContentLoaded', initializeLazyLoading);
+    </script>
+</body>
+</html> 
