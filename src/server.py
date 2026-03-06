@@ -10,6 +10,8 @@ from server_utils import (response_with_status, post_ephemeral_blocks,
                          post_message_to_channel_or_thread, post_public_blocks,
                          post_file_to_channel_or_thread)
 from video_utils import capture_frame
+from camera_config import build_config_blocks, update_field, reset_config, EDITABLE_FIELDS
+from event_bus import State
 
 app = Flask(__name__)
 
@@ -42,6 +44,55 @@ def slack_interact():
     interaction = BlockInteraction(payload)
 
     if interaction.action_id == "null":
+        return response_with_status("")
+
+    if interaction.action_id == "config-dismiss":
+        interaction.update_with_message("Okay!")
+        return response_with_status("")
+
+    if interaction.action_id in ("config-reset",) or \
+       interaction.action_id.startswith(("config-edit-", "config-set-")):
+        if _state_machine and _state_machine.state != State.IDLE:
+            interaction.update_with_message("Stop recording before editing config.")
+            return response_with_status("")
+
+    if interaction.action_id == "config-reset":
+        try:
+            reset_config()
+            blocks = build_config_blocks()
+            interaction.update_blocks(blocks, "Camera config")
+        except Exception as e:
+            interaction.update_with_message(f"Error resetting config: {e}")
+        return response_with_status("")
+
+    if interaction.action_id.startswith("config-edit-"):
+        key = interaction.action_id.removeprefix("config-edit-")
+        if key in EDITABLE_FIELDS:
+            field = EDITABLE_FIELDS[key]
+            interaction.update_blocks([
+                {
+                    "type": "input",
+                    "dispatch_action": True,
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": f"config-set-{key}",
+                        "placeholder": {"type": "plain_text", "text": f"Enter {field['label']}"},
+                    },
+                    "label": {"type": "plain_text", "text": field["label"]},
+                }
+            ], f"Edit {field['label']}")
+        return response_with_status("")
+
+    if interaction.action_id.startswith("config-set-"):
+        key = interaction.action_id.removeprefix("config-set-")
+        if key in EDITABLE_FIELDS:
+            value = payload.get("actions", [{}])[0].get("value", "")
+            try:
+                update_field(key, value)
+                blocks = build_config_blocks()
+                interaction.update_blocks(blocks, "Camera config")
+            except (ValueError, TypeError) as e:
+                interaction.update_with_message(f"Invalid value: {e}")
         return response_with_status("")
 
     if file_read_lock.locked():
@@ -132,6 +183,26 @@ def slack_commands():
             except Exception as e:
                 return response_with_status(f'Error capturing frame: {e}')
             return response_with_status('')
+
+        if command_text == 'config':
+            blocks = build_config_blocks()
+            post_ephemeral_blocks(data['channel_id'], blocks, data['user_id'])
+            return response_with_status('')
+
+        if command_text.startswith('config '):
+            if _state_machine and _state_machine.state != State.IDLE:
+                return response_with_status('Stop recording before editing config.')
+            parts = command_text.split(maxsplit=2)
+            if len(parts) == 3:
+                _, key, value = parts
+                if key in EDITABLE_FIELDS:
+                    try:
+                        update_field(key, value)
+                        return response_with_status(f'Updated {key} to {value}.')
+                    except (ValueError, TypeError) as e:
+                        return response_with_status(f'Invalid value: {e}')
+                return response_with_status(f'Unknown config key: {key}')
+            return response_with_status('Usage: /hl config <key> <value>')
 
         if command_text == 'status' and _state_machine:
             return response_with_status(f'Status: {_state_machine.state.name}')

@@ -1,26 +1,52 @@
+import json
 import os
 from subprocess import check_output
 import time
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
+from PIL import Image
 
 VIDEO_BUFFER_FILE = "buffer.h264"
-fps = 60
-dur = 20
 
 _picam2 = None
 _encoder = None
+_cfg = None
+
+
+def _load_config():
+    global _cfg
+    with open("camera_config.json") as f:
+        _cfg = json.load(f)
+    return _cfg
 
 
 def _get_camera():
     global _picam2, _encoder
+    if _cfg is None:
+        _load_config()
     if _picam2 is None:
         _picam2 = Picamera2()
-        vconfig = _picam2.create_video_configuration(controls={"FrameRate": fps})
+        vconfig = _picam2.create_video_configuration(controls=_cfg.get("controls", {}))
         _picam2.configure(vconfig)
-        _encoder = H264Encoder(10000000)
+        _encoder = H264Encoder(_cfg["bitrate"])
     return _picam2, _encoder
+
+
+def reinitialize_camera():
+    global _picam2, _encoder
+    if _picam2 is not None:
+        if _picam2.started:
+            try:
+                _picam2.stop_encoder()
+            except Exception:
+                pass
+            _picam2.stop()
+        _picam2.close()
+        _picam2 = None
+        _encoder = None
+    _load_config()
+    _get_camera()
 
 
 def start_camera():
@@ -39,7 +65,7 @@ def start_recording_video():
         os.remove(VIDEO_BUFFER_FILE)
     output = CircularOutput(
         file=VIDEO_BUFFER_FILE,
-        buffersize=int(fps * (dur + 1)),
+        buffersize=int(_cfg["fps"] * (_cfg["buffer_duration"] + 1)),
         outputtofile=False,
     )
     cam.start_encoder(encoder, output)
@@ -58,9 +84,10 @@ def capture_frame():
     was_stopped = not cam.started
     if was_stopped:
         cam.start()
-    cam.capture_file(SNAPSHOT_FILE)
+    frame = cam.capture_array("main")
     if was_stopped:
         cam.stop()
+    Image.fromarray(frame).convert("RGB").save(SNAPSHOT_FILE)
     return SNAPSHOT_FILE
 
 
@@ -68,12 +95,19 @@ def capture_video_data():
     cam, _ = _get_camera()
     video_end_time = time.time()
     cam.stop_encoder()
-    packet_count = check_output([
-        'ffprobe', '-i', VIDEO_BUFFER_FILE,
-        '-count_packets',
-        '-show_entries', 'stream=nb_read_packets',
-        '-v', 'quiet', '-of', 'csv=p=0',
-    ]).decode('utf-8').strip()
-    video_duration = float(packet_count) / fps
-    video_start_time = video_end_time - video_duration
-    return video_start_time
+    try:
+        packet_count = check_output([
+            'ffprobe', '-i', VIDEO_BUFFER_FILE,
+            '-count_packets',
+            '-show_entries', 'stream=nb_read_packets',
+            '-v', 'quiet', '-of', 'csv=p=0',
+        ]).decode('utf-8').strip()
+        if not packet_count or packet_count == 'N/A':
+            print("Video buffer not ready (packet count N/A)")
+            return 0
+        video_duration = float(packet_count) / _cfg["fps"]
+        video_start_time = video_end_time - video_duration
+        return video_start_time
+    except Exception as e:
+        print(f"Error reading video metadata: {e}")
+        return 0

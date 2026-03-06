@@ -1,0 +1,8 @@
+{
+    "fps": 60,
+    "bitrate": 10000000,
+    "buffer_duration": 20,
+    "controls": {
+        "FrameRate": 60
+    }
+}

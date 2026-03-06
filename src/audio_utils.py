@@ -1,3 +1,4 @@
+import json
 from subprocess import check_output, CalledProcessError
 import os
 import time
@@ -5,11 +6,14 @@ import time
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.udp_client import UDPClient
 
+with open("audio_config.json") as _f:
+    _cfg = json.load(_f)
+
 timestamp_file = "time.tme"
 AUDIO_BUFFER_FILE = 'buffer.wav'
 
-HOST = '127.0.0.1'
-PORT = 7777
+HOST = _cfg["osc_host"]
+PORT = _cfg["osc_port"]
 
 START = OscMessageBuilder('/jack_capture/tm/start').build()
 STOP = OscMessageBuilder('/jack_capture/stop').build()

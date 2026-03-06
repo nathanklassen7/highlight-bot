@@ -1,10 +1,13 @@
+import json
 from datetime import datetime
 from subprocess import DEVNULL, call
-from video_utils import fps, VIDEO_BUFFER_FILE
+from video_utils import VIDEO_BUFFER_FILE
 from audio_utils import AUDIO_BUFFER_FILE
 
 
 def encode_video(audio_start_time, video_start_time):
+    with open("camera_config.json") as f:
+        fps = json.load(f)["fps"]
     offset = int((audio_start_time - video_start_time) * 1000)
     timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
     output_file = f'clips/{timestamp}.mp4'
