@@ -28,7 +28,10 @@ def main():
 
     try:
         sm.run()
+    except KeyboardInterrupt:
+        pass
     finally:
+        recording.stop()
         button.cleanup()
         led.stop()
 

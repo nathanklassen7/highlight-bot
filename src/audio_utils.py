@@ -1,5 +1,6 @@
 from subprocess import check_output, CalledProcessError
 import os
+import time
 
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.udp_client import UDPClient
@@ -30,7 +31,17 @@ def get_timestamp():
         return float(line)
 
 
+def _kill_existing_jack_capture():
+    try:
+        check_output(['pkill', '-f', 'jack_capture'])
+        time.sleep(0.5)
+    except CalledProcessError:
+        pass
+
+
 def start_recording_audio():
+    _kill_existing_jack_capture()
+
     if os.path.exists(timestamp_file):
         os.remove(timestamp_file)
     if os.path.exists(AUDIO_BUFFER_FILE):
@@ -43,9 +54,22 @@ def stop_recording_audio():
     _get_client().send(STOP)
 
 
+def _wait_for_timestamp(timeout=10.0, poll=0.1):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if os.path.exists(timestamp_file):
+            return True
+        time.sleep(poll)
+    return False
+
+
 def capture_audio_data():
     _get_client().send(START)
     _get_client().send(STOP)
+
+    if not _wait_for_timestamp():
+        print("Timed out waiting for jack_capture to finish writing")
+        return 0
 
     try:
         duration_str = check_output([
@@ -53,6 +77,9 @@ def capture_audio_data():
             '-show_entries', 'format=duration',
             '-v', 'quiet', '-of', 'csv=p=0',
         ]).decode('utf-8').strip()
+        if not duration_str or duration_str == 'N/A':
+            print("Audio buffer not ready yet (duration N/A)")
+            return 0
         audio_duration = float(duration_str)
         audio_end_time = get_timestamp()
         audio_start_time = audio_end_time - audio_duration

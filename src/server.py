@@ -7,7 +7,9 @@ from file_management.get_blocks_from_files import get_blocks_from_files
 from flask import Flask, request, Response
 from interactions.collect_session_or_all_clips import collect_session_or_all
 from server_utils import (response_with_status, post_ephemeral_blocks,
-                         post_message_to_channel_or_thread, post_public_blocks)
+                         post_message_to_channel_or_thread, post_public_blocks,
+                         post_file_to_channel_or_thread)
+from video_utils import capture_frame
 
 app = Flask(__name__)
 
@@ -122,6 +124,14 @@ def slack_commands():
         if command_text == 'clip' and _event_bus:
             _event_bus.emit(EventType.SLACK_CLIP)
             return response_with_status('Saving clip.')
+
+        if command_text == 'pic':
+            try:
+                path = capture_frame()
+                post_file_to_channel_or_thread(data['channel_id'], path, '')
+            except Exception as e:
+                return response_with_status(f'Error capturing frame: {e}')
+            return response_with_status('')
 
         if command_text == 'status' and _state_machine:
             return response_with_status(f'Status: {_state_machine.state.name}')

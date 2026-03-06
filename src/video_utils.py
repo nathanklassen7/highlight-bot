@@ -50,6 +50,20 @@ def stop_recording_video():
     cam.stop_encoder()
 
 
+SNAPSHOT_FILE = "snapshot.jpg"
+
+
+def capture_frame():
+    cam, _ = _get_camera()
+    was_stopped = not cam.started
+    if was_stopped:
+        cam.start()
+    cam.capture_file(SNAPSHOT_FILE)
+    if was_stopped:
+        cam.stop()
+    return SNAPSHOT_FILE
+
+
 def capture_video_data():
     cam, _ = _get_camera()
     video_end_time = time.time()
