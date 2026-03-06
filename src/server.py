@@ -1,5 +1,4 @@
 import json
-import os
 
 from interactions.BlockInteraction import BlockInteraction
 from file_management.delete_clips import delete_all_clips, delete_clip
@@ -7,10 +6,8 @@ from file_management.file_read_lock import file_read_lock
 from file_management.get_blocks_from_files import get_blocks_from_files
 from flask import Flask, request, Response
 from interactions.collect_session_or_all_clips import collect_session_or_all
-from server_utils import (ResponseWithStatus, post_ephemeral_blocks,
+from server_utils import (response_with_status, post_ephemeral_blocks,
                          post_message_to_channel_or_thread, post_public_blocks)
-
-slack_token = os.environ.get('SLACK_BOT_TOKEN')
 
 app = Flask(__name__)
 
@@ -34,7 +31,7 @@ def slack_events():
         event = data['event']
         if event.get('type') == 'app_mention':
             return handle_mention(event)
-    return ResponseWithStatus("Invalid event type")
+    return response_with_status("Invalid event type")
 
 
 @app.route('/slack/interact', methods=['POST'])
@@ -43,11 +40,11 @@ def slack_interact():
     interaction = BlockInteraction(payload)
 
     if interaction.action_id == "null":
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if file_read_lock.locked():
         interaction.update_with_message("I'm busy right now, try again later!")
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     file_read_lock.acquire()
 
@@ -58,14 +55,14 @@ def slack_interact():
             interaction.update_with_message(f"Error refreshing blocks: {e}")
         finally:
             file_read_lock.release()
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if interaction.action_id == "dismiss":
         try:
             interaction.update_with_message("Okay!")
         finally:
             file_read_lock.release()
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if interaction.action_id == "delete-all":
         try:
@@ -75,7 +72,7 @@ def slack_interact():
             interaction.update_with_message(f"Error deleting all clips: {e}")
         finally:
             file_read_lock.release()
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if interaction.action_id == "delete-clip":
         try:
@@ -85,7 +82,7 @@ def slack_interact():
             interaction.update_with_message(f"Error deleting clip: {e}")
         finally:
             file_read_lock.release()
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if interaction.action_id == "collect-all":
         try:
@@ -93,7 +90,7 @@ def slack_interact():
         except Exception as e:
             file_read_lock.release()
             interaction.update_with_message(f"Error collecting all clips: {e}")
-        return ResponseWithStatus("")
+        return response_with_status("")
 
     if interaction.action_id == "collect-session":
         try:
@@ -101,9 +98,9 @@ def slack_interact():
         except Exception as e:
             file_read_lock.release()
             interaction.update_with_message(f"Error collecting session: {e}")
-        return ResponseWithStatus("")
+        return response_with_status("")
 
-    return ResponseWithStatus("Interact")
+    return response_with_status("Interact")
 
 
 @app.route('/slack/command', methods=['POST'])
@@ -116,18 +113,18 @@ def slack_commands():
     if data['command'] == '/hl':
         if command_text in ('record', 'start') and _event_bus:
             _event_bus.emit(EventType.SLACK_START)
-            return ResponseWithStatus('Starting recording.')
+            return response_with_status('Starting recording.')
 
         if command_text == 'stop' and _event_bus:
             _event_bus.emit(EventType.SLACK_STOP)
-            return ResponseWithStatus('Stopping recording.')
+            return response_with_status('Stopping recording.')
 
         if command_text == 'clip' and _event_bus:
             _event_bus.emit(EventType.SLACK_CLIP)
-            return ResponseWithStatus('Saving clip.')
+            return response_with_status('Saving clip.')
 
         if command_text == 'status' and _state_machine:
-            return ResponseWithStatus(f'Status: {_state_machine.state.name}')
+            return response_with_status(f'Status: {_state_machine.state.name}')
 
         is_public = command_text == 'public'
         blocks = get_blocks_from_files()
@@ -135,9 +132,9 @@ def slack_commands():
             post_public_blocks(data['channel_id'], blocks)
         else:
             post_ephemeral_blocks(data['channel_id'], blocks, data['user_id'])
-        return ResponseWithStatus('')
+        return response_with_status('')
 
-    return ResponseWithStatus('Command not recognized. Try /help for available commands.')
+    return response_with_status('Command not recognized. Try /help for available commands.')
 
 
 def handle_mention(event):

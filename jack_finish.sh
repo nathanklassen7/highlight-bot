@@ -1,2 +1,3 @@
 #!/bin/bash
-date +%s.%N > /home/nathanklassen/highlight-bot/time.tme
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+date +%s.%N > "${SCRIPT_DIR}/time.tme"
