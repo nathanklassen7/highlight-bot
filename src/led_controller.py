@@ -4,9 +4,9 @@ import RPi.GPIO as GPIO
 from event_bus import State
 
 OUTPUT_PIN_MAP = {
-    "record": 21,
-    "on": 26,
-    "write": 20,
+    "on": 22,
+    "record": 23,
+    "write": 27,
 }
 
 FLASH_SPEED = 0.2
