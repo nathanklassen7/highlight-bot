@@ -204,6 +204,21 @@ def slack_commands():
                 return response_with_status(f'Unknown config key: {key}')
             return response_with_status('Usage: /hl config <key> <value>')
 
+        if command_text == 'timeout' and _state_machine:
+            hours = _state_machine.inactivity_timeout / 3600
+            return response_with_status(f'Inactivity timeout: {hours:.2f} hours')
+
+        if command_text.startswith('timeout ') and _state_machine:
+            try:
+                hours = float(command_text.split(maxsplit=1)[1])
+                if hours <= 0:
+                    return response_with_status('Timeout must be positive.')
+                _state_machine.inactivity_timeout = hours * 3600
+                _state_machine.save_timeout()
+                return response_with_status(f'Inactivity timeout set to {hours:.2f} hours.')
+            except ValueError:
+                return response_with_status('Usage: /hl timeout <hours>')
+
         if command_text == 'status' and _state_machine:
             return response_with_status(f'Status: {_state_machine.state.name}')
 

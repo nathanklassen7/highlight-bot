@@ -11,6 +11,7 @@ class EventType(Enum):
     SLACK_STOP = auto()
     ENCODE_OK = auto()
     ENCODE_FAIL = auto()
+    INACTIVITY_TIMEOUT = auto()
 
 
 class State(Enum):

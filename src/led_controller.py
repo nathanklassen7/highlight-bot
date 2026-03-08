@@ -21,6 +21,7 @@ class LedController:
         self._running = False
         self._thread: threading.Thread | None = None
         self._transient: str | None = None
+        self.timeout_warning = False
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -68,7 +69,12 @@ class LedController:
                 self._write("record", False)
                 self._write("write", False)
             elif state == State.RECORDING:
-                flash = int(time.time()) % 2 == 0
+                if self.timeout_warning:
+                    # flash flash pause: on off on off off off
+                    phase = int(time.time() / 0.2) % 6
+                    flash = phase in (0, 2)
+                else:
+                    flash = int(time.time()) % 2 == 0
                 self._write("record", flash)
                 self._write("write", False)
             elif state == State.SAVING:
