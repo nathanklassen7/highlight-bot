@@ -1,5 +1,7 @@
 slack_bolt
 slack_sdk==3.31.0
+Flask==3.0.3
+Flask-SocketIO==5.3.6
 librosa==0.10.2.post1
 numpy==2.0.1
 opencv-python==4.10.0.84
