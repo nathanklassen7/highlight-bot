@@ -20,11 +20,7 @@ sudo apt update && sudo apt install -y \
     jackd2 jack-capture tmux ffmpeg libcamera-apps
 ```
 
-### 2. Install ngrok
-
-Follow the instructions at https://ngrok.com/download to install ngrok and set up your auth token.
-
-### 3. Clone and install
+### 2. Clone and install
 
 ```bash
 git clone <repo-url> ~/highlight-bot
@@ -34,13 +30,25 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure
+### 3. Configure Slack App
 
-Create a `.env` file in the project root with your secrets:
+The bot uses **Slack Socket Mode**, which connects outbound over WebSocket — no public URL, ngrok, or port forwarding required.
+
+In your [Slack App settings](https://api.slack.com/apps):
+
+1. Go to **Socket Mode** and enable it.
+2. Go to **Basic Information → App-Level Tokens**, create a token with the `connections:write` scope. Copy the `xapp-...` token.
+3. Ensure your bot has the necessary **Bot Token Scopes** (under OAuth & Permissions): `app_mentions:read`, `chat:write`, `commands`, `files:write`.
+4. Ensure **Event Subscriptions** are enabled and `app_mention` is subscribed.
+5. Ensure your `/hl` **Slash Command** is registered.
+
+### 4. Configure environment
+
+Create a `.env` file in the project root:
 
 ```bash
-SLACK_BOT_TOKEN="xoxb-your-token"
-NGROK_DOMAIN="your-domain.ngrok-free.app"
+SLACK_BOT_TOKEN="xoxb-your-bot-token"
+SLACK_APP_TOKEN="xapp-your-app-level-token"
 ```
 
 Copy the default configs:
@@ -67,7 +75,7 @@ mkdir -p ~/.config/systemd/user
 
 cat > ~/.config/systemd/user/highlight-bot.service << 'EOF'
 [Unit]
-Description=Highlight Bot (tmux session)
+Description=Highlight Bot
 After=network-online.target sound.target
 Wants=network-online.target
 
@@ -76,6 +84,8 @@ Type=forking
 ExecStart=/home/$USER/highlight-bot/start.sh
 ExecStop=/home/$USER/highlight-bot/stop.sh
 RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=default.target
@@ -107,12 +117,13 @@ The bot will start automatically on boot.
 | Action | Command |
 |---|---|
 | View processes | `tmux attach -t highlight-bot` |
-| Switch windows | `Ctrl-B 0` (jack), `Ctrl-B 1` (ngrok), `Ctrl-B 2` (app) |
+| Switch windows | `Ctrl-B 0` (jack), `Ctrl-B 1` (app) |
 | Detach (keep running) | `Ctrl-B d` |
 | Stop | `systemctl --user stop highlight-bot` |
 | Start | `systemctl --user start highlight-bot` |
 | Restart | `systemctl --user restart highlight-bot` |
 | Status | `systemctl --user status highlight-bot` |
+| Logs | `journalctl --user -u highlight-bot -f` |
 
 ## Guide
 

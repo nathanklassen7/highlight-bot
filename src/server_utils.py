@@ -1,14 +1,10 @@
-from typing import Optional
-import requests
-from flask import Response
-from slack_sdk import WebClient
 import os
+from typing import Optional
+
+import requests
+from slack_sdk import WebClient
 
 client = WebClient(token=os.environ.get('SLACK_BOT_TOKEN'))
-
-
-def response_with_status(message):
-    return Response(message, status=200, mimetype='text/plain')
 
 
 def post_message_to_channel_or_thread(channel: str, text: str, thread_ts: Optional[str] = None):
