@@ -10,6 +10,7 @@ from led_controller import LedController
 from recording_manager import RecordingManager
 from state_machine import StateMachine
 from server import init_server
+from web_server import init_web_server
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +30,7 @@ def main():
     sm = StateMachine(event_bus, led, recording)
 
     threading.Thread(target=init_server, args=(event_bus, sm), daemon=True).start()
+    threading.Thread(target=init_web_server, daemon=True).start()
 
     button.start()
     led.start()

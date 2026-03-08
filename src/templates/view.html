@@ -218,9 +218,7 @@
                     });
 
                     if (response.ok) {
-                        const data = await response.json();
-                        trimmedDownload.href = data.download_url;
-                        trimmedDownload.classList.remove('hidden');
+                        window.location.reload();
                     } else {
                         alert('Error trimming video');
                     }

@@ -149,7 +149,7 @@ def trim_video(filename):
         output_path.rename(input_path)  # Rename trimmed file to original name
         
         return jsonify({
-            'download_url': f'/clips/{trimmed_filename}'
+            'download_url': f'/clips/{filename}'
         })
         
     except Exception as e:

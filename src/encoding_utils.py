@@ -9,7 +9,7 @@ def encode_video(audio_start_time, video_start_time):
     with open("camera_config.json") as f:
         fps = json.load(f)["fps"]
     offset = int((audio_start_time - video_start_time) * 1000)
-    timestamp = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
     output_file = f'clips/{timestamp}.mp4'
     return call([
         'ffmpeg',

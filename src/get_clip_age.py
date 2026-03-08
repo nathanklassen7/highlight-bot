@@ -6,7 +6,7 @@ def get_clip_age(file_name):
     timestamp_str = file_name.split('.')[0]
     
     # Parse the timestamp into a datetime object
-    recorded_time = datetime.strptime(timestamp_str, '%Y-%m-%d-%H:%M:%S')
+    recorded_time = datetime.strptime(timestamp_str, '%Y-%m-%d-%H_%M_%S')
     
     # Calculate the time difference from now
     current_time = datetime.now()
@@ -32,7 +32,7 @@ def get_clip_age(file_name):
 def get_time_difference(file_name1, file_name2):
     timestamp_str1 = file_name1.split('.')[0]
     timestamp_str2 = file_name2.split('.')[0]
-    recorded_time1 = datetime.strptime(timestamp_str1, '%Y-%m-%d-%H:%M:%S')
-    recorded_time2 = datetime.strptime(timestamp_str2, '%Y-%m-%d-%H:%M:%S')
+    recorded_time1 = datetime.strptime(timestamp_str1, '%Y-%m-%d-%H_%M_%S')
+    recorded_time2 = datetime.strptime(timestamp_str2, '%Y-%m-%d-%H_%M_%S')
     time_difference = recorded_time1 - recorded_time2
     return time_difference
