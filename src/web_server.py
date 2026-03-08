@@ -19,6 +19,9 @@ BASE_PATH = Path(__file__).parent.parent
 CLIPS_DIR = BASE_PATH / "clips"
 TRIMMED_DIR = BASE_PATH / "trimmed"
 
+_event_bus = None
+_state_machine = None
+
 def get_clips():
     """Get list of video clips with their metadata."""
     clips = []
@@ -65,25 +68,57 @@ def monitor_clips_directory():
         time.sleep(1)  # Check every second
 
 @app.route('/')
-def index():
-    """Render the main page with the list of clips."""
+def homepage():
+    return render_template('home.html')
+
+
+@app.route('/api/bot/status')
+def bot_status():
+    if not _state_machine:
+        return jsonify({'state': 'unknown'})
+    return jsonify({'state': _state_machine.state.name})
+
+
+@app.route('/api/bot/action', methods=['POST'])
+def bot_action():
+    from event_bus import EventType
+    if not _event_bus:
+        return jsonify({'error': 'Bot not initialized'}), 500
+
+    action = request.json.get('action')
+    actions = {
+        'start': EventType.SLACK_START,
+        'stop': EventType.SLACK_STOP,
+        'clip': EventType.SLACK_CLIP,
+    }
+    event_type = actions.get(action)
+    if not event_type:
+        return jsonify({'error': 'Unknown action'}), 400
+
+    _event_bus.emit(event_type)
+    return jsonify({'status': 'ok'})
+
+
+@app.route('/clips')
+def clips_page():
     sessions = get_sessions_with_metadata()
     return render_template('index.html', sessions=sessions)
 
-@app.route('/clips/<path:filename>')
+
+@app.route('/clips/file/<path:filename>')
 def serve_clip(filename):
-    """Serve a video clip file."""
     return send_file(
         CLIPS_DIR / filename,
         mimetype=mimetypes.guess_type(filename)[0]
     )
 
+
 @app.route('/api/clips')
 def api_clips():
-    """API endpoint to get list of clips."""
     return jsonify(get_sessions_with_metadata())
 
-@app.route('/view/<path:filename>')
+
+@app.route('/clips/view/<path:filename>')
 def view_clip(filename):
     """View a specific video clip with details."""
     file_path = CLIPS_DIR / filename
@@ -150,7 +185,7 @@ def trim_video(filename):
         output_path.rename(input_path)  # Rename trimmed file to original name
         
         return jsonify({
-            'download_url': f'/clips/{filename}'
+            'download_url': f'/clips/file/{filename}'
         })
         
     except Exception as e:
@@ -164,6 +199,81 @@ def serve_trimmed_clip(filename):
         TRIMMED_DIR / filename,
         mimetype=mimetypes.guess_type(filename)[0]
     )
+
+
+@app.route('/viewfinder')
+def viewfinder_page():
+    return render_template('viewfinder.html')
+
+
+@app.route('/api/snapshot', methods=['POST'])
+def api_snapshot():
+    from video_utils import capture_frame
+    try:
+        capture_frame()
+        return jsonify({'status': 'ok', 'ts': time.time()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/snapshot')
+def serve_snapshot():
+    snapshot = BASE_PATH / 'snapshot.jpg'
+    if not snapshot.exists():
+        return 'No snapshot', 404
+    return send_file(snapshot, mimetype='image/jpeg')
+
+
+@app.route('/config')
+def config_page():
+    return render_template('config.html')
+
+
+@app.route('/api/config')
+def api_config_get():
+    from camera_config import read_config, EDITABLE_FIELDS, _get_field_value
+    cfg = read_config()
+    fields = []
+    for key, field in EDITABLE_FIELDS.items():
+        fields.append({
+            'key': key,
+            'label': field['label'],
+            'type': field['type'],
+            'value': _get_field_value(cfg, key),
+        })
+    return jsonify(fields)
+
+
+@app.route('/api/config', methods=['POST'])
+def api_config_update():
+    from camera_config import update_field, EDITABLE_FIELDS
+    from event_bus import State
+    if _state_machine and _state_machine.state != State.IDLE:
+        return jsonify({'error': 'Stop recording before editing config.'}), 400
+
+    data = request.json
+    key = data.get('key', '')
+    value = data.get('value', '')
+
+    if key not in EDITABLE_FIELDS:
+        return jsonify({'error': f'Unknown config key: {key}'}), 400
+
+    try:
+        update_field(key, str(value))
+        return jsonify({'status': 'ok'})
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/config/reset', methods=['POST'])
+def api_config_reset():
+    from camera_config import reset_config
+    from event_bus import State
+    if _state_machine and _state_machine.state != State.IDLE:
+        return jsonify({'error': 'Stop recording before resetting config.'}), 400
+
+    reset_config()
+    return jsonify({'status': 'ok'})
 
 
 @app.route('/api/temperature')
@@ -227,13 +337,14 @@ def wifi_forget():
         return jsonify({'error': str(e)}), 500
 
 
-def init_web_server():
-    """Initialize and run the web server."""
-    # Start the directory monitoring thread
+def init_web_server(event_bus=None, state_machine=None):
+    global _event_bus, _state_machine
+    _event_bus = event_bus
+    _state_machine = state_machine
+
     monitor_thread = Thread(target=monitor_clips_directory, daemon=True)
     monitor_thread.start()
-    
-    # Run the Flask app with SocketIO
+
     socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
 
 if __name__ == "__main__":

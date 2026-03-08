@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Config</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-xl mx-auto py-4 px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Camera Config</h1>
+            <a href="/" class="text-blue-600 hover:text-blue-800 text-sm">&larr; Home</a>
+        </div>
+    </header>
+
+    <main class="max-w-xl mx-auto py-6 px-4 space-y-4">
+        <div id="error-bar" class="hidden p-3 bg-red-100 text-red-700 rounded-lg text-sm"></div>
+
+        <div id="fields" class="space-y-3"></div>
+
+        <button onclick="resetConfig()"
+            class="w-full p-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">
+            Reset to Defaults
+        </button>
+    </main>
+
+    <script>
+        let fields = [];
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config');
+                fields = await res.json();
+                render();
+            } catch (e) {
+                showError('Failed to load config');
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('fields');
+            container.innerHTML = fields.map(f => {
+                let input;
+                if (f.type === 'bool') {
+                    input = `
+                        <select data-key="${f.key}"
+                            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="true" ${f.value === true ? 'selected' : ''}>On</option>
+                            <option value="false" ${f.value === false ? 'selected' : ''}>Off</option>
+                        </select>`;
+                } else {
+                    const inputType = f.type === 'float' ? 'number' : (f.type === 'int' ? 'number' : 'text');
+                    const step = f.type === 'float' ? 'any' : '1';
+                    const val = f.value !== null && f.value !== undefined ? f.value : '';
+                    input = `
+                        <input type="${inputType}" step="${step}" data-key="${f.key}" value="${val}"
+                            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">`;
+                }
+                return `
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-medium text-gray-900">${f.label}</label>
+                            <button onclick="saveField('${f.key}')"
+                                class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                        </div>
+                        ${input}
+                    </div>`;
+            }).join('');
+        }
+
+        async function saveField(key) {
+            const el = document.querySelector(`[data-key="${key}"]`);
+            const value = el.value;
+            hideError();
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, value })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    loadConfig();
+                }
+            } catch (e) {
+                showError('Failed to save');
+            }
+        }
+
+        async function resetConfig() {
+            if (!confirm('Reset all config values to defaults?')) return;
+            hideError();
+
+            try {
+                const res = await fetch('/api/config/reset', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    loadConfig();
+                }
+            } catch (e) {
+                showError('Failed to reset');
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-bar');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-bar').classList.add('hidden');
+        }
+
+        loadConfig();
+    </script>
+</body>
+</html>

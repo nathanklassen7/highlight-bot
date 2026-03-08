@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highlight Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .pulse { animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-xl mx-auto py-4 px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Highlight Bot</h1>
+            <span id="temp-display" class="text-sm text-gray-500"></span>
+        </div>
+    </header>
+
+    <main class="max-w-xl mx-auto py-6 px-4 space-y-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div id="status-indicator" class="inline-block w-4 h-4 rounded-full bg-gray-400 mb-3"></div>
+            <p class="text-lg font-semibold" id="status-text">Loading...</p>
+        </div>
+
+        <div id="controls" class="grid gap-4">
+            <button onclick="botAction('start')" id="btn-start"
+                class="hidden p-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
+                Start Recording
+            </button>
+            <button onclick="botAction('clip')" id="btn-clip"
+                class="hidden p-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+                Save Clip
+            </button>
+            <button onclick="botAction('stop')" id="btn-stop"
+                class="hidden p-4 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">
+                Stop Recording
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <a href="/viewfinder" class="block p-4 bg-white rounded-lg shadow-sm hover:bg-gray-50 text-center font-medium text-gray-900">
+                Viewfinder
+            </a>
+            <a href="/clips" class="block p-4 bg-white rounded-lg shadow-sm hover:bg-gray-50 text-center font-medium text-gray-900">
+                View Clips
+            </a>
+            <a href="/config" class="block p-4 bg-white rounded-lg shadow-sm hover:bg-gray-50 text-center font-medium text-gray-900">
+                Camera Config
+            </a>
+            <a href="/wifi" class="block p-4 bg-white rounded-lg shadow-sm hover:bg-gray-50 text-center font-medium text-gray-900">
+                WiFi Settings
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const stateColors = {
+            IDLE: 'bg-gray-400',
+            RECORDING: 'bg-red-500 pulse',
+            SAVING: 'bg-yellow-500 pulse',
+        };
+
+        const stateLabels = {
+            IDLE: 'Idle',
+            RECORDING: 'Recording',
+            SAVING: 'Saving clip...',
+        };
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/bot/status');
+                const data = await res.json();
+                const state = data.state;
+
+                document.getElementById('status-text').textContent = stateLabels[state] || state;
+
+                const indicator = document.getElementById('status-indicator');
+                indicator.className = 'inline-block w-4 h-4 rounded-full mb-3 ' + (stateColors[state] || 'bg-gray-400');
+
+                const isIdle = state === 'IDLE';
+                const isRecording = state === 'RECORDING';
+                document.getElementById('btn-start').classList.toggle('hidden', !isIdle);
+                document.getElementById('btn-clip').classList.toggle('hidden', !isRecording);
+                document.getElementById('btn-stop').classList.toggle('hidden', !isRecording);
+            } catch (e) {
+                document.getElementById('status-text').textContent = 'Unreachable';
+            }
+        }
+
+        async function botAction(action) {
+            try {
+                await fetch('/api/bot/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+            } catch (e) {}
+            setTimeout(updateStatus, 500);
+        }
+
+        async function updateTemp() {
+            try {
+                const res = await fetch('/api/temperature');
+                const data = await res.json();
+                if (data.temp !== undefined) {
+                    document.getElementById('temp-display').textContent = data.temp.toFixed(1) + '°C';
+                }
+            } catch (e) {}
+        }
+
+        updateStatus();
+        updateTemp();
+        setInterval(updateStatus, 2000);
+        setInterval(updateTemp, 5000);
+    </script>
+</body>
+</html>

@@ -36,7 +36,7 @@ def main():
     else:
         threading.Thread(target=init_server, args=(event_bus, sm), daemon=True).start()
 
-    threading.Thread(target=init_web_server, daemon=True).start()
+    threading.Thread(target=init_web_server, args=(event_bus, sm), daemon=True).start()
 
     button.start()
     led.start()

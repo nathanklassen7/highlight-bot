@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewfinder</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        #snapshot { width: 100%; border-radius: 0.5rem; background: #111; min-height: 200px; object-fit: contain; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-3xl mx-auto py-4 px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Viewfinder</h1>
+            <a href="/" class="text-blue-600 hover:text-blue-800 text-sm">&larr; Home</a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto py-6 px-4 space-y-4">
+        <div class="bg-black rounded-lg overflow-hidden">
+            <img id="snapshot" alt="Camera snapshot">
+        </div>
+
+        <button onclick="refresh()" id="refresh-btn"
+            class="w-full p-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+            Refresh
+        </button>
+    </main>
+
+    <script>
+        async function refresh() {
+            const btn = document.getElementById('refresh-btn');
+            btn.disabled = true;
+            btn.textContent = 'Capturing...';
+
+            try {
+                const res = await fetch('/api/snapshot', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    document.getElementById('snapshot').src = '/api/snapshot?' + data.ts;
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Failed to capture frame');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Refresh';
+        }
+
+        refresh();
+    </script>
+</body>
+</html>

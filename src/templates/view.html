@@ -37,7 +37,7 @@
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-900 truncate">{{ filename }}</h1>
-                <a href="/" class="text-blue-600 hover:text-blue-800">← Back to all clips</a>
+                <a href="/clips" class="text-blue-600 hover:text-blue-800">← Back to all clips</a>
             </div>
         </div>
     </header>
@@ -47,7 +47,7 @@
             <!-- Video Player -->
             <div class="video-container">
                 <video id="videoPlayer" controls>
-                    <source src="/clips/{{ filename }}" type="video/mp4">
+                    <source src="/clips/file/{{ filename }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             </div>
@@ -120,7 +120,7 @@
 
                     <!-- Download Buttons -->
                     <div class="mt-6 flex space-x-4">
-                        <a href="/clips/{{ filename }}" 
+                        <a href="/clips/file/{{ filename }}" 
                            download
                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Download Original
@@ -139,7 +139,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {% for clip in session %}
                                 {% if clip.filename != filename %}
-                                <a href="/view/{{ clip.filename }}" class="block">
+                                <a href="/clips/view/{{ clip.filename }}" class="block">
                                     <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition">
                                         <p class="text-sm font-medium text-gray-900 truncate">{{ clip.filename }}</p>
                                         <p class="text-xs text-gray-500">{{ (clip.size / 1024 / 1024)|round(2) }} MB</p>
