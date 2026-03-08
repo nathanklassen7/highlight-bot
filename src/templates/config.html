@@ -16,6 +16,7 @@
 
     <main class="max-w-xl mx-auto py-6 px-4 space-y-4">
         <div id="error-bar" class="hidden p-3 bg-red-100 text-red-700 rounded-lg text-sm"></div>
+        <div id="success-bar" class="hidden p-3 bg-green-100 text-green-700 rounded-lg text-sm"></div>
 
         <div id="fields" class="space-y-3"></div>
 
@@ -72,7 +73,7 @@
         async function saveField(key) {
             const el = document.querySelector(`[data-key="${key}"]`);
             const value = el.value;
-            hideError();
+            hideBars();
 
             try {
                 const res = await fetch('/api/config', {
@@ -84,6 +85,7 @@
                 if (data.error) {
                     showError(data.error);
                 } else {
+                    showSuccess('Saved');
                     loadConfig();
                 }
             } catch (e) {
@@ -93,7 +95,7 @@
 
         async function resetConfig() {
             if (!confirm('Reset all config values to defaults?')) return;
-            hideError();
+            hideBars();
 
             try {
                 const res = await fetch('/api/config/reset', { method: 'POST' });
@@ -101,6 +103,7 @@
                 if (data.error) {
                     showError(data.error);
                 } else {
+                    showSuccess('Config reset to defaults');
                     loadConfig();
                 }
             } catch (e) {
@@ -109,13 +112,23 @@
         }
 
         function showError(msg) {
+            hideBars();
             const el = document.getElementById('error-bar');
             el.textContent = msg;
             el.classList.remove('hidden');
         }
 
-        function hideError() {
+        function showSuccess(msg) {
+            hideBars();
+            const el = document.getElementById('success-bar');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        function hideBars() {
             document.getElementById('error-bar').classList.add('hidden');
+            document.getElementById('success-bar').classList.add('hidden');
         }
 
         loadConfig();

@@ -118,6 +118,18 @@ def api_clips():
     return jsonify(get_sessions_with_metadata())
 
 
+@app.route('/api/clips/<path:filename>', methods=['DELETE'])
+def api_delete_clip(filename):
+    file_path = CLIPS_DIR / filename
+    if not file_path.exists():
+        return jsonify({'error': 'File not found'}), 404
+    try:
+        file_path.unlink()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/clips/view/<path:filename>')
 def view_clip(filename):
     """View a specific video clip with details."""

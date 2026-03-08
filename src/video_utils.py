@@ -13,7 +13,6 @@ _picam2 = None
 _encoder = None
 _cfg = None
 
-
 def _load_config():
     global _cfg
     with open("camera_config.json") as f:
@@ -105,6 +104,7 @@ def capture_video_data():
         if not packet_count or packet_count == 'N/A':
             print("Video buffer not ready (packet count N/A)")
             return 0
+        print(f"FPS: {_cfg['fps']}")
         video_duration = float(packet_count) / _cfg["fps"]
         video_start_time = video_end_time - video_duration
         return video_start_time
