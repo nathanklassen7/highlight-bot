@@ -14,10 +14,6 @@ tmux send-keys -t "$SESSION:jack" "cd $SCRIPT_DIR && bash jack_server_start.sh" 
 
 sleep 2
 
-# Window 1: ngrok
-tmux new-window -t "$SESSION" -n ngrok
-tmux send-keys -t "$SESSION:ngrok" "cd $SCRIPT_DIR && bash launch_ngrok.sh" Enter
-
-# Window 2: main app
+# Window 1: main app
 tmux new-window -t "$SESSION" -n app
 tmux send-keys -t "$SESSION:app" "cd $SCRIPT_DIR && source env/bin/activate && python3 src/main.py" Enter

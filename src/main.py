@@ -1,3 +1,4 @@
+import logging
 import os
 import threading
 import time
@@ -9,6 +10,12 @@ from led_controller import LedController
 from recording_manager import RecordingManager
 from state_machine import StateMachine
 from server import init_server
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(name)s %(levelname)s %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def main():
