@@ -22,12 +22,7 @@ sudo apt update && sudo apt install -y \
 
 ### 2. Install ngrok
 
-Follow the instructions at https://ngrok.com/download to install ngrok and set up your auth token. Create `~/launch_ngrok.sh` with your ngrok command, e.g.:
-
-```bash
-#!/bin/bash
-ngrok http --domain=your-domain.ngrok-free.app 3000
-```
+Follow the instructions at https://ngrok.com/download to install ngrok and set up your auth token.
 
 ### 3. Clone and install
 
@@ -40,6 +35,13 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure
+
+Create a `.env` file in the project root with your secrets:
+
+```bash
+SLACK_BOT_TOKEN="xoxb-your-token"
+NGROK_DOMAIN="your-domain.ngrok-free.app"
+```
 
 Copy the default configs:
 
@@ -54,12 +56,6 @@ Create `audio_config.json`:
     "osc_host": "127.0.0.1",
     "osc_port": 7777
 }
-```
-
-Set your Slack bot token as an environment variable (add to `~/.bashrc`):
-
-```bash
-export SLACK_BOT_TOKEN="xoxb-your-token"
 ```
 
 ### 5. Set up auto-start

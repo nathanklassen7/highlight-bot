@@ -16,7 +16,7 @@ sleep 2
 
 # Window 1: ngrok
 tmux new-window -t "$SESSION" -n ngrok
-tmux send-keys -t "$SESSION:ngrok" "bash ~/launch_ngrok.sh" Enter
+tmux send-keys -t "$SESSION:ngrok" "cd $SCRIPT_DIR && bash launch_ngrok.sh" Enter
 
 # Window 2: main app
 tmux new-window -t "$SESSION" -n app
