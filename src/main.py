@@ -29,7 +29,13 @@ def main():
     button = ButtonController(event_bus)
     sm = StateMachine(event_bus, led, recording)
 
-    threading.Thread(target=init_server, args=(event_bus, sm), daemon=True).start()
+    travel_mode = os.environ.get('TRAVEL_MODE') == '1'
+
+    if travel_mode:
+        logger.info("Travel mode: starting web server only (no Slack)")
+    else:
+        threading.Thread(target=init_server, args=(event_bus, sm), daemon=True).start()
+
     threading.Thread(target=init_web_server, daemon=True).start()
 
     button.start()
