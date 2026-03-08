@@ -5,9 +5,16 @@ from video_utils import reinitialize_camera
 CONFIG_FILE = "camera_config.json"
 DEFAULT_CONFIG_FILE = "default_camera_config.json"
 
+PRESETS = {
+    "1080p30":  {"width": 1920, "height": 1080, "fps": 30,  "bitrate": 10000000},
+    "1080p50":  {"width": 1920, "height": 1080, "fps": 50,  "bitrate": 12000000},
+    "720p60":   {"width": 1280, "height": 720,  "fps": 60,  "bitrate": 8000000},
+    "900p90":   {"width": 1600, "height": 900,  "fps": 90,  "bitrate": 12000000},
+    "720p90":   {"width": 1280, "height": 720,  "fps": 90,  "bitrate": 10000000},
+    "480p120":  {"width": 640,  "height": 480,  "fps": 120, "bitrate": 5000000},
+}
+
 EDITABLE_FIELDS = {
-    "fps": {"label": "FPS", "type": "int"},
-    "bitrate": {"label": "Bitrate", "type": "int"},
     "buffer_duration": {"label": "Buffer Duration (s)", "type": "int"},
     "ExposureTime": {"label": "Exposure Time (µs)", "type": "int", "control": True},
     "AnalogueGain": {"label": "Analogue Gain", "type": "float", "control": True},
@@ -30,6 +37,30 @@ def reset_config():
     shutil.copy(DEFAULT_CONFIG_FILE, CONFIG_FILE)
     reinitialize_camera()
     return read_config()
+
+
+def apply_preset(name):
+    if name not in PRESETS:
+        raise ValueError(f"Unknown preset: {name}")
+    preset = PRESETS[name]
+    cfg = read_config()
+    cfg["width"] = preset["width"]
+    cfg["height"] = preset["height"]
+    cfg["fps"] = preset["fps"]
+    cfg["bitrate"] = preset["bitrate"]
+    cfg.setdefault("controls", {})["FrameRate"] = preset["fps"]
+    write_config(cfg)
+    reinitialize_camera()
+    return cfg
+
+
+def get_current_preset(cfg):
+    for name, preset in PRESETS.items():
+        if (cfg.get("width") == preset["width"] and
+            cfg.get("height") == preset["height"] and
+            cfg.get("fps") == preset["fps"]):
+            return name
+    return None
 
 
 def update_field(key, value):

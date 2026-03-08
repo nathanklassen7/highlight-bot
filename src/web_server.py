@@ -243,7 +243,7 @@ def config_page():
 
 @app.route('/api/config')
 def api_config_get():
-    from camera_config import read_config, EDITABLE_FIELDS, _get_field_value
+    from camera_config import read_config, EDITABLE_FIELDS, _get_field_value, PRESETS, get_current_preset
     cfg = read_config()
     fields = []
     for key, field in EDITABLE_FIELDS.items():
@@ -253,7 +253,27 @@ def api_config_get():
             'type': field['type'],
             'value': _get_field_value(cfg, key),
         })
-    return jsonify(fields)
+    return jsonify({
+        'fields': fields,
+        'presets': list(PRESETS.keys()),
+        'current_preset': get_current_preset(cfg),
+    })
+
+
+@app.route('/api/config/preset', methods=['POST'])
+def api_config_preset():
+    from camera_config import apply_preset
+    from event_bus import State
+    if _state_machine and _state_machine.state != State.IDLE:
+        return jsonify({'error': 'Stop recording before changing preset.'}), 400
+
+    data = request.json
+    name = data.get('preset', '')
+    try:
+        apply_preset(name)
+        return jsonify({'status': 'ok'})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
 
 
 @app.route('/api/config', methods=['POST'])

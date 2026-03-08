@@ -26,7 +26,10 @@ def _get_camera():
         _load_config()
     if _picam2 is None:
         _picam2 = Picamera2()
-        vconfig = _picam2.create_video_configuration(controls=_cfg.get("controls", {}))
+        main_size = None
+        if "width" in _cfg and "height" in _cfg:
+            main_size = {"size": (_cfg["width"], _cfg["height"])}
+        vconfig = _picam2.create_video_configuration(main=main_size, controls=_cfg.get("controls", {}))
         _picam2.configure(vconfig)
         _encoder = H264Encoder(_cfg["bitrate"])
     return _picam2, _encoder

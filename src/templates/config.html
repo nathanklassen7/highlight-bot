@@ -14,9 +14,14 @@
         </div>
     </header>
 
-    <main class="max-w-xl mx-auto py-6 px-4 space-y-4">
+    <main class="max-w-xl mx-auto py-6 px-4 space-y-6">
         <div id="error-bar" class="hidden p-3 bg-red-100 text-red-700 rounded-lg text-sm"></div>
         <div id="success-bar" class="hidden p-3 bg-green-100 text-green-700 rounded-lg text-sm"></div>
+
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h2 class="font-semibold text-gray-900 mb-3">Resolution Preset</h2>
+            <div id="presets" class="grid grid-cols-2 gap-2"></div>
+        </div>
 
         <div id="fields" class="space-y-3"></div>
 
@@ -27,21 +32,33 @@
     </main>
 
     <script>
-        let fields = [];
+        let configData = {};
 
         async function loadConfig() {
             try {
                 const res = await fetch('/api/config');
-                fields = await res.json();
-                render();
+                configData = await res.json();
+                renderPresets();
+                renderFields();
             } catch (e) {
                 showError('Failed to load config');
             }
         }
 
-        function render() {
+        function renderPresets() {
+            const container = document.getElementById('presets');
+            container.innerHTML = configData.presets.map(name => {
+                const active = name === configData.current_preset;
+                const cls = active
+                    ? 'p-3 rounded-lg font-semibold text-white bg-blue-600'
+                    : 'p-3 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 cursor-pointer';
+                return `<button onclick="applyPreset('${name}')" class="${cls}" ${active ? 'disabled' : ''}>${name}</button>`;
+            }).join('');
+        }
+
+        function renderFields() {
             const container = document.getElementById('fields');
-            container.innerHTML = fields.map(f => {
+            container.innerHTML = configData.fields.map(f => {
                 let input;
                 if (f.type === 'bool') {
                     input = `
@@ -68,6 +85,26 @@
                         ${input}
                     </div>`;
             }).join('');
+        }
+
+        async function applyPreset(name) {
+            hideBars();
+            try {
+                const res = await fetch('/api/config/preset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ preset: name })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showSuccess('Preset applied: ' + name);
+                    loadConfig();
+                }
+            } catch (e) {
+                showError('Failed to apply preset');
+            }
         }
 
         async function saveField(key) {

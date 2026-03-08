@@ -14,7 +14,7 @@ from server_utils import (post_ephemeral_blocks,
                          post_message_to_channel_or_thread, post_public_blocks,
                          post_file_to_channel_or_thread)
 from video_utils import capture_frame
-from camera_config import build_config_blocks, update_field, reset_config, EDITABLE_FIELDS
+from camera_config import build_config_blocks, update_field, reset_config, EDITABLE_FIELDS, PRESETS, apply_preset
 from event_bus import State
 
 logger = logging.getLogger(__name__)
@@ -105,6 +105,15 @@ def handle_command(ack, command):
             ack('Stop recording before editing config.')
             return
         parts = command_text.split(maxsplit=2)
+        if len(parts) == 2:
+            _, preset_or_key = parts
+            if preset_or_key in PRESETS:
+                try:
+                    apply_preset(preset_or_key)
+                    ack(f'Applied preset: {preset_or_key}')
+                except ValueError as e:
+                    ack(f'Error: {e}')
+                return
         if len(parts) == 3:
             _, key, value = parts
             if key in EDITABLE_FIELDS:
@@ -116,7 +125,8 @@ def handle_command(ack, command):
                 return
             ack(f'Unknown config key: {key}')
             return
-        ack('Usage: /hl config <key> <value>')
+        preset_names = ', '.join(PRESETS.keys())
+        ack(f'Usage: /hl config <preset> or /hl config <key> <value>\nPresets: {preset_names}')
         return
 
     if command_text == 'timeout' and _state_machine:
