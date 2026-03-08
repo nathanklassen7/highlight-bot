@@ -7,6 +7,7 @@ import time
 from threading import Thread
 import json
 from file_management.get_sessions import get_sessions
+from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
 from datetime import datetime
 import subprocess
 import uuid
@@ -163,6 +164,55 @@ def serve_trimmed_clip(filename):
         TRIMMED_DIR / filename,
         mimetype=mimetypes.guess_type(filename)[0]
     )
+
+
+@app.route('/wifi')
+def wifi_page():
+    return render_template('wifi.html')
+
+
+@app.route('/api/wifi/status')
+def wifi_status():
+    try:
+        return jsonify(get_wifi_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/wifi/connect', methods=['POST'])
+def wifi_connect():
+    data = request.json
+    ssid = data.get('ssid', '').strip()
+    password = data.get('password', '').strip()
+
+    if not ssid:
+        return jsonify({'error': 'SSID is required'}), 400
+
+    Thread(target=connect_wifi, args=(ssid, password), daemon=True).start()
+    return jsonify({'status': 'connecting'})
+
+
+@app.route('/api/wifi/hotspot', methods=['POST'])
+def wifi_hotspot():
+    try:
+        enable_hotspot()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/wifi/forget', methods=['POST'])
+def wifi_forget():
+    data = request.json
+    ssid = data.get('ssid', '').strip()
+    if not ssid or ssid == 'Hotspot':
+        return jsonify({'error': 'Invalid network'}), 400
+    try:
+        forget_network(ssid)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 def init_web_server():
     """Initialize and run the web server."""
