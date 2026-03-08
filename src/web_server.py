@@ -166,6 +166,19 @@ def serve_trimmed_clip(filename):
     )
 
 
+@app.route('/api/temperature')
+def api_temperature():
+    try:
+        result = subprocess.run(
+            ['vcgencmd', 'measure_temp'],
+            capture_output=True, text=True, timeout=5
+        )
+        temp = result.stdout.strip().replace("temp=", "").replace("'C", "")
+        return jsonify({'temp': float(temp)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/wifi')
 def wifi_page():
     return render_template('wifi.html')

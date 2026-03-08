@@ -53,8 +53,9 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-900">Video Clips Browser</h1>
+            <span id="temp-display" class="text-sm text-gray-500"></span>
         </div>
     </header>
 
@@ -180,6 +181,18 @@
 
         // Initial lazy loading setup
         document.addEventListener('DOMContentLoaded', initializeLazyLoading);
+
+        async function updateTemp() {
+            try {
+                const res = await fetch('/api/temperature');
+                const data = await res.json();
+                if (data.temp !== undefined) {
+                    document.getElementById('temp-display').textContent = data.temp.toFixed(1) + '°C';
+                }
+            } catch (e) {}
+        }
+        updateTemp();
+        setInterval(updateTemp, 5000);
     </script>
 </body>
 </html> 
