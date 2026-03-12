@@ -5,10 +5,10 @@ source "$SCRIPT_DIR/.env"
 set +a
 SESSION="highlight-bot"
 
-HOTSPOT_SSID="${HOTSPOT_SSID:-HighlightBot}"
-HOTSPOT_PASSWORD="${HOTSPOT_PASSWORD:-highlights}"
+HOTSPOT_SSID="HighlightBot"
+HOTSPOT_PASSWORD="highlights"
 
-# Poll for internet connectivity (20 seconds)
+# Poll for internet connectivity (10 seconds)
 TRAVEL_MODE=0
 echo "Checking for internet connection..."
 for i in $(seq 1 10); do
@@ -17,9 +17,9 @@ for i in $(seq 1 10); do
         break
     fi
     echo "  No connection (attempt $i/10)..."
-    sleep 2
+    sleep 1
     if [ "$i" -eq 10 ]; then
-        echo "No internet after 20 seconds. Starting in travel mode."
+        echo "No internet after 10 seconds. Starting in travel mode."
         TRAVEL_MODE=1
     fi
 done

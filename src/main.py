@@ -9,7 +9,6 @@ from button_controller import ButtonController
 from led_controller import LedController
 from recording_manager import RecordingManager
 from state_machine import StateMachine
-from server import init_server
 from web_server import init_web_server
 
 logging.basicConfig(
@@ -34,6 +33,7 @@ def main():
     if travel_mode:
         logger.info("Travel mode: starting web server only (no Slack)")
     else:
+        from server import init_server
         threading.Thread(target=init_server, args=(event_bus, sm), daemon=True).start()
 
     threading.Thread(target=init_web_server, args=(event_bus, sm), daemon=True).start()
