@@ -6,11 +6,10 @@ CONFIG_FILE = "camera_config.json"
 DEFAULT_CONFIG_FILE = "default_camera_config.json"
 
 PRESETS = {
-    "1080p30":  {"width": 1920, "height": 1080, "fps": 30,  "bitrate": 10000000},
-    "1080p50":  {"width": 1920, "height": 1080, "fps": 50,  "bitrate": 12000000},
-    "720p60":   {"width": 1280, "height": 720,  "fps": 60,  "bitrate": 8000000},
-    "900p90":   {"width": 1600, "height": 900,  "fps": 90,  "bitrate": 12000000},
-    "720p90":   {"width": 1280, "height": 720,  "fps": 90,  "bitrate": 10000000},
+    "1080p30":  {"width": 1920, "height": 1080, "fps": 30,  "bitrate": 4000000},
+    "1080p50":  {"width": 1920, "height": 1080, "fps": 50,  "bitrate": 7000000},
+    "720p60":   {"width": 1280, "height": 720,  "fps": 60,  "bitrate": 6000000},
+    "720p90":   {"width": 1280, "height": 720,  "fps": 90,  "bitrate": 9000000},
     "480p120":  {"width": 640,  "height": 480,  "fps": 120, "bitrate": 5000000},
 }
 
