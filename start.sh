@@ -8,18 +8,18 @@ SESSION="highlight-bot"
 HOTSPOT_SSID="HighlightBot"
 HOTSPOT_PASSWORD="highlights"
 
-# Poll for internet connectivity (10 seconds)
+# Poll for internet connectivity (20 seconds)
 TRAVEL_MODE=0
 echo "Checking for internet connection..."
-for i in $(seq 1 10); do
+for i in $(seq 1 20); do
     if ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
         echo "Internet connection found."
         break
     fi
-    echo "  No connection (attempt $i/10)..."
+    echo "  No connection (attempt $i/20)..."
     sleep 1
-    if [ "$i" -eq 10 ]; then
-        echo "No internet after 10 seconds. Starting in travel mode."
+    if [ "$i" -eq 20 ]; then
+        echo "No internet after 20 seconds. Starting in travel mode."
         TRAVEL_MODE=1
     fi
 done

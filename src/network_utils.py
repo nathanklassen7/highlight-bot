@@ -44,7 +44,7 @@ def connect_wifi(ssid, password=''):
             enable_hotspot()
             return
 
-        time.sleep(3)
+        time.sleep(10)
         check = subprocess.run(
             ['nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show', '--active'],
             capture_output=True, text=True, timeout=5
