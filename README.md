@@ -61,8 +61,8 @@ Create `audio_config.json`:
 
 ```json
 {
-    "osc_host": "127.0.0.1",
-    "osc_port": 7777
+  "osc_host": "127.0.0.1",
+  "osc_port": 7777
 }
 ```
 
@@ -114,16 +114,16 @@ The bot will start automatically on boot.
 
 ## Managing the bot
 
-| Action | Command |
-|---|---|
-| View processes | `tmux attach -t highlight-bot` |
-| Switch windows | `Ctrl-B 0` (jack), `Ctrl-B 1` (app) |
-| Detach (keep running) | `Ctrl-B d` |
-| Stop | `systemctl --user stop highlight-bot` |
-| Start | `systemctl --user start highlight-bot` |
-| Restart | `systemctl --user restart highlight-bot` |
-| Status | `systemctl --user status highlight-bot` |
-| Logs | `journalctl --user -u highlight-bot -f` |
+| Action                | Command                                  |
+| --------------------- | ---------------------------------------- |
+| View processes        | `tmux attach -t highlight-bot`           |
+| Switch windows        | `Ctrl-B 0` (jack), `Ctrl-B 1` (app)      |
+| Detach (keep running) | `Ctrl-B d`                               |
+| Stop                  | `systemctl --user stop highlight-bot`    |
+| Start                 | `systemctl --user start highlight-bot`   |
+| Restart               | `systemctl --user restart highlight-bot` |
+| Status                | `systemctl --user status highlight-bot`  |
+| Logs                  | `journalctl --user -u highlight-bot -f`  |
 
 ## Guide
 
@@ -134,18 +134,39 @@ To wake it up, just press the clip button. It should start flashing red again.
 
 ## Slack commands
 
-| Command | Description |
-|---|---|
-| `/hl` | List saved clips (ephemeral) |
-| `/hl public` | List saved clips (posted to channel) |
-| `/hl start` or `/hl record` | Start recording |
-| `/hl stop` | Stop recording |
-| `/hl clip` | Save the last 20s as a clip |
-| `/hl pic` | Capture a frame and post to channel |
-| `/hl status` | Show current state |
-| `/hl config` | Show camera config |
-| `/hl config <key> <value>` | Update a config value (while idle) |
-| `/hl timeout` | Show inactivity timeout |
-| `/hl timeout <hours>` | Set inactivity timeout |
+| Command                     | Description                          |
+| --------------------------- | ------------------------------------ |
+| `/hl`                       | List saved clips (ephemeral)         |
+| `/hl public`                | List saved clips (posted to channel) |
+| `/hl start` or `/hl record` | Start recording                      |
+| `/hl stop`                  | Stop recording                       |
+| `/hl clip`                  | Save the last 20s as a clip          |
+| `/hl pic`                   | Capture a frame and post to channel  |
+| `/hl status`                | Show current state                   |
+| `/hl config`                | Show camera config                   |
+| `/hl config <key> <value>`  | Update a config value (while idle)   |
+| `/hl timeout`               | Show inactivity timeout              |
+| `/hl timeout <hours>`       | Set inactivity timeout               |
 
 You can also @mention the bot with `start`, `stop`, `clip`, or `status`.
+
+## Optimizing Pi Memory Headroom
+
+### Disabling Audio Servers for JACK (Headless Raspberry Pi)
+
+When using JACK for audio recording, PulseAudio and PipeWire can be disabled.
+
+Disable and mask all conflicting audio services:
+
+```bash
+systemctl --user disable --now pulseaudio pulseaudio.socket pipewire pipewire-pulse wireplumber
+systemctl --user mask pulseaudio pulseaudio.socket pipewire pipewire-pulse wireplumber
+```
+
+### Reduce GPU memory
+
+Add to `/boot/firmware/config.txt`:
+
+```ini
+gpu_mem=16
+```
