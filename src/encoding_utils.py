@@ -17,7 +17,7 @@ def encode_video(audio_start_time, video_start_time):
         '-i', VIDEO_BUFFER_FILE,
         '-i', AUDIO_BUFFER_FILE,
         '-c:v', 'copy',
-        '-af', f'adelay={offset}|{offset},pan=mono|c0=FL',
+        '-af', f'adelay={offset}',
         '-c:a', 'aac', '-ac', '1',
         output_file,
         '-y', '-shortest',
