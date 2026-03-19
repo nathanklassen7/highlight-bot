@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from subprocess import check_output
 import time
 from picamera2 import Picamera2
@@ -8,6 +9,9 @@ from picamera2.outputs import CircularOutput
 from PIL import Image
 
 VIDEO_BUFFER_FILE = "buffer.h264"
+
+if not os.path.exists("camera_config.json"):
+    shutil.copy("default_camera_config.json", "camera_config.json")
 
 _picam2 = None
 _encoder = None

@@ -1,13 +1,9 @@
 import json
-import os
 import shutil
 from video_utils import reinitialize_camera
 
 CONFIG_FILE = "camera_config.json"
 DEFAULT_CONFIG_FILE = "default_camera_config.json"
-
-if not os.path.exists(CONFIG_FILE):
-    shutil.copy(DEFAULT_CONFIG_FILE, CONFIG_FILE)
 
 PRESETS = {
     "1080p30":  {"width": 1920, "height": 1080, "fps": 30,  "bitrate": 4000000},
