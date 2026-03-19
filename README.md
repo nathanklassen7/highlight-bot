@@ -16,7 +16,8 @@ To push updates, simply merge code to main and the Raspberry Pi will pull it whe
 
 ```bash
 sudo apt update && sudo apt install -y \
-    python3-pip python3-venv python3-picamera2 python3-dev \
+    python3-pip python3-venv python3-dev \
+    python3-picamera2 python3-numpy python3-opencv python3-scipy python3-gpiozero \
     jackd2 jack-capture tmux ffmpeg libcamera-apps
 ```
 
@@ -25,7 +26,7 @@ sudo apt update && sudo apt install -y \
 ```bash
 git clone <repo-url> ~/highlight-bot
 cd ~/highlight-bot
-python3 -m venv env
+python3 -m venv --system-site-packages env
 source env/bin/activate
 pip install -r requirements.txt
 ```
