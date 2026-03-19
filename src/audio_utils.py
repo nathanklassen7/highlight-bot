@@ -15,6 +15,7 @@ with open("audio_config.json") as _f:
 
 timestamp_file = "time.tme"
 AUDIO_BUFFER_FILE = 'buffer.wav'
+TIMESTAMP_TIMEOUT = 2.0
 
 HOST = _cfg["osc_host"]
 PORT = _cfg["osc_port"]
@@ -62,7 +63,7 @@ def stop_recording_audio():
     _get_client().send(STOP)
 
 
-def _wait_for_timestamp(timeout=10.0, poll=0.1):
+def _wait_for_timestamp(timeout=TIMESTAMP_TIMEOUT, poll=0.1):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if os.path.exists(timestamp_file):
