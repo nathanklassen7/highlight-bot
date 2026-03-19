@@ -53,15 +53,10 @@ SLACK_APP_TOKEN="xapp-your-app-level-token"
 # DISABLE_SLACK=1  # Set to 1 to disable the Slack server
 ```
 
-Copy the default configs:
+Both `camera_config.json` and `audio_config.json` are created automatically from their defaults on first run. To customize them beforehand:
 
 ```bash
 cp default_camera_config.json camera_config.json
-```
-
-`audio_config.json` is created automatically from `default_audio_config.json` on first run. To customize it beforehand:
-
-```bash
 cp default_audio_config.json audio_config.json
 ```
 
