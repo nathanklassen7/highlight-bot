@@ -49,6 +49,7 @@ Create a `.env` file in the project root:
 ```bash
 SLACK_BOT_TOKEN="xoxb-your-bot-token"
 SLACK_APP_TOKEN="xapp-your-app-level-token"
+# DISABLE_SLACK=1  # Set to 1 to disable the Slack server
 ```
 
 Copy the default configs:
