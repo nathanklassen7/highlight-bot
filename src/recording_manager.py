@@ -41,10 +41,13 @@ class RecordingManager:
         video_start_time = capture_video_data()
         audio_start_time = capture_audio_data()
 
-        if video_start_time == 0 or audio_start_time == 0:
-            print("Error capturing audio/video")
+        if video_start_time == 0:
+            print("Error capturing video")
             self._event_bus.emit(EventType.ENCODE_FAIL)
             return
+
+        if audio_start_time == 0:
+            print("Audio capture failed, saving video without audio")
 
         threading.Thread(
             target=self._encode_worker,
