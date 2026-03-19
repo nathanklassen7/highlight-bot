@@ -8,3 +8,4 @@ opencv-python==4.10.0.84
 scipy==1.13.1
 picamera2==0.3.18
 python-osc==1.9.0
+gpiozero

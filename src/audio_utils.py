@@ -1,10 +1,14 @@
 import json
+import shutil
 from subprocess import check_output, CalledProcessError
 import os
 import time
 
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.udp_client import UDPClient
+
+if not os.path.exists("audio_config.json"):
+    shutil.copy("default_audio_config.json", "audio_config.json")
 
 with open("audio_config.json") as _f:
     _cfg = json.load(_f)

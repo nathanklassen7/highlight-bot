@@ -16,7 +16,7 @@ To push updates, simply merge code to main and the Raspberry Pi will pull it whe
 
 ```bash
 sudo apt update && sudo apt install -y \
-    python3-pip python3-venv python3-picamera2 \
+    python3-pip python3-venv python3-picamera2 python3-dev \
     jackd2 jack-capture tmux ffmpeg libcamera-apps
 ```
 
@@ -58,13 +58,10 @@ Copy the default configs:
 cp default_camera_config.json camera_config.json
 ```
 
-Create `audio_config.json`:
+`audio_config.json` is created automatically from `default_audio_config.json` on first run. To customize it beforehand:
 
-```json
-{
-  "osc_host": "127.0.0.1",
-  "osc_port": 7777
-}
+```bash
+cp default_audio_config.json audio_config.json
 ```
 
 ### 5. Set up auto-start
