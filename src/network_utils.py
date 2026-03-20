@@ -34,11 +34,30 @@ def connect_wifi(ssid, password=''):
         )
         time.sleep(1)
 
-        cmd = ['sudo', 'nmcli', 'device', 'wifi', 'connect', ssid]
         if password:
-            cmd += ['password', password]
+            subprocess.run(
+                ['sudo', 'nmcli', 'connection', 'delete', ssid],
+                capture_output=True, timeout=10
+            )
+            cmd = [
+                'sudo', 'nmcli', 'connection', 'add',
+                'type', 'wifi', 'con-name', ssid, 'ssid', ssid,
+                'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', password,
+            ]
+        else:
+            cmd = ['sudo', 'nmcli', 'device', 'wifi', 'connect', ssid]
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+        if result.returncode != 0:
+            enable_hotspot()
+            return
+
+        if password:
+            result = subprocess.run(
+                ['sudo', 'nmcli', 'connection', 'up', ssid],
+                capture_output=True, text=True, timeout=30
+            )
 
         if result.returncode != 0:
             enable_hotspot()

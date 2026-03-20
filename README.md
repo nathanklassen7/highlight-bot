@@ -72,8 +72,8 @@ Wants=network-online.target
 
 [Service]
 Type=forking
-ExecStart=/home/$USER/highlight-bot/start.sh
-ExecStop=/home/$USER/highlight-bot/stop.sh
+ExecStart=%h/highlight-bot/start.sh
+ExecStop=%h/highlight-bot/stop.sh
 RemainAfterExit=yes
 Restart=on-failure
 RestartSec=5
