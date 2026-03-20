@@ -15,10 +15,25 @@ To push updates, simply merge code to main and the Raspberry Pi will pull it whe
 ### 1. Install system dependencies
 
 ```bash
-sudo apt update && sudo apt install -y python3-pip python3-venv python3-dev python3-picamera2 python3-numpy python3-opencv python3-scipy python3-gpiozero ffmpeg jackd2 jack-capture tmux ffmpeg libcamera-apps
+sudo apt update && sudo apt install -y \
+    python3-pip python3-venv python3-dev \
+    python3-picamera2 python3-numpy python3-opencv python3-scipy python3-gpiozero \
+    jackd2 libjack-jackd2-dev liblo-dev \
+    tmux ffmpeg libcamera-apps
 ```
 
-### 2. Clone and install
+### 2. Build jack_capture from source
+
+The apt version of `jack_capture` is compiled without OSC support. Build from source with `liblo`:
+
+```bash
+git clone https://github.com/kmatheussen/jack_capture.git /tmp/jack_capture
+cd /tmp/jack_capture
+make
+sudo make install
+```
+
+### 3. Clone and install
 
 ```bash
 git clone <repo-url> ~/highlight-bot
@@ -28,7 +43,7 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure Slack App
+### 4. Configure Slack App
 
 The bot uses **Slack Socket Mode**, which connects outbound over WebSocket — no public URL, ngrok, or port forwarding required.
 
@@ -40,7 +55,7 @@ In your [Slack App settings](https://api.slack.com/apps):
 4. Ensure **Event Subscriptions** are enabled and `app_mention` is subscribed.
 5. Ensure your `/hl` **Slash Command** is registered.
 
-### 4. Configure environment
+### 5. Configure environment
 
 Create a `.env` file in the project root:
 
@@ -57,7 +72,7 @@ cp default_camera_config.json camera_config.json
 cp default_audio_config.json audio_config.json
 ```
 
-### 5. Set up auto-start
+### 6. Set up auto-start
 
 Install the systemd user service:
 
@@ -87,7 +102,7 @@ systemctl --user daemon-reload
 systemctl --user enable highlight-bot.service
 ```
 
-### 6. (Optional) Disable the desktop
+### 7. (Optional) Disable the desktop
 
 Free up ~400MB of RAM by booting to CLI:
 
@@ -95,7 +110,7 @@ Free up ~400MB of RAM by booting to CLI:
 sudo raspi-config nonint do_boot_behaviour B1
 ```
 
-### 7. Reboot
+### 8. Reboot
 
 ```bash
 sudo reboot
