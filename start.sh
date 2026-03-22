@@ -47,6 +47,10 @@ else
 
     sleep 2
 
+    # Pull latest code
+    echo "Pulling latest code..."
+    cd "$SCRIPT_DIR" && git pull origin main
+
     # Window 1: main app (normal mode — Slack + web server)
     tmux new-window -t "$SESSION" -n app
     tmux send-keys -t "$SESSION:app" "cd $SCRIPT_DIR && source env/bin/activate && python3 src/main.py" Enter
