@@ -35,13 +35,6 @@
             height: 100%;
             object-fit: cover;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         .session-header {
             background: #f3f4f6;
             padding: 1rem;
@@ -63,14 +56,14 @@
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div id="sessions-container">
             {% for session in sessions %}
-            <div class="session-section fade-in">
+            <div class="session-section">
                 <div class="session-header">
                     <h2 class="text-xl font-semibold text-gray-900">Session {{ loop.index }}</h2>
                     <p class="text-sm text-gray-500">{{ session|length }} clips</p>
                 </div>
                 <div class="video-grid">
                     {% for clip in session %}
-                    <div class="video-card fade-in">
+                    <div class="video-card" data-filename="{{ clip.filename }}">
                         <div class="video-container">
                             <video controls preload="metadata">
                                 <source src="/clips/file/{{ clip.filename }}" type="video/mp4">
@@ -139,67 +132,94 @@
         // Initialize Socket.IO connection
         const socket = io();
         
-        // Handle real-time updates
+        function buildClipCard(clip) {
+            const div = document.createElement('div');
+            div.className = 'video-card';
+            div.dataset.filename = clip.filename;
+            div.innerHTML = `
+                <div class="video-container">
+                    <video controls preload="metadata">
+                        <source src="/clips/file/${clip.filename}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 truncate">
+                        <a href="/clips/view/${clip.filename}" class="hover:text-blue-600">${clip.filename}</a>
+                    </h3>
+                    <p class="text-sm text-gray-500">
+                        Size: ${(clip.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <a href="/clips/view/${clip.filename}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            View
+                        </a>
+                        <a href="/clips/file/${clip.filename}" 
+                           download
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Download
+                        </a>
+                        <button onclick="shareClip('${clip.filename}')"
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Share
+                        </button>
+                        <button onclick="deleteClip('${clip.filename}')"
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
         socket.on('clips_update', function(sessionsData) {
             const sessions = JSON.parse(sessionsData);
-            const sessionsContainer = document.getElementById('sessions-container');
-            
-            // Clear existing content
-            sessionsContainer.innerHTML = '';
-            
-            // Add new sessions with fade-in animation
-            sessions.forEach((session, sessionIndex) => {
-                const sessionSection = document.createElement('div');
-                sessionSection.className = 'session-section fade-in';
-                sessionSection.innerHTML = `
-                    <div class="session-header">
-                        <h2 class="text-xl font-semibold text-gray-900">Session ${sessionIndex + 1}</h2>
-                        <p class="text-sm text-gray-500">${session.length} clips</p>
-                    </div>
-                    <div class="video-grid">
-                        ${session.map(clip => `
-                            <div class="video-card fade-in">
-                                <div class="video-container">
-                                    <video controls preload="metadata">
-                                        <source src="/clips/file/${clip.filename}" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                    </video>
-                                </div>
-                                <div class="p-4">
-                                    <h3 class="text-lg font-semibold text-gray-900 truncate">
-                                        <a href="/clips/view/${clip.filename}" class="hover:text-blue-600">${clip.filename}</a>
-                                    </h3>
-                                    <p class="text-sm text-gray-500">
-                                        Size: ${(clip.size / 1024 / 1024).toFixed(2)} MB
-                                    </p>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <a href="/clips/view/${clip.filename}" 
-                                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            View
-                                        </a>
-                                        <a href="/clips/file/${clip.filename}" 
-                                           download
-                                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            Download
-                                        </a>
-                                        <button onclick="shareClip('${clip.filename}')"
-                                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            Share
-                                        </button>
-                                        <button onclick="deleteClip('${clip.filename}')"
-                                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                sessionsContainer.appendChild(sessionSection);
+            const container = document.getElementById('sessions-container');
+            const existing = new Set(
+                Array.from(container.querySelectorAll('.video-card[data-filename]'))
+                     .map(el => el.dataset.filename)
+            );
+            const incoming = new Set(sessions.flat().map(c => c.filename));
+
+            // Remove cards that no longer exist
+            container.querySelectorAll('.video-card[data-filename]').forEach(el => {
+                if (!incoming.has(el.dataset.filename)) el.closest('.session-section')?.contains(el) && el.remove();
             });
-            
-            // Reinitialize lazy loading for new videos
+
+            // Remove empty sessions
+            container.querySelectorAll('.session-section').forEach(sec => {
+                if (sec.querySelectorAll('.video-card').length === 0) sec.remove();
+            });
+
+            // Add new clips
+            const sessionSections = container.querySelectorAll('.session-section');
+            sessions.forEach((session, i) => {
+                let section = sessionSections[i];
+                if (!section) {
+                    section = document.createElement('div');
+                    section.className = 'session-section';
+                    section.innerHTML = `
+                        <div class="session-header">
+                            <h2 class="text-xl font-semibold text-gray-900">Session ${i + 1}</h2>
+                            <p class="text-sm text-gray-500">${session.length} clips</p>
+                        </div>
+                        <div class="video-grid"></div>
+                    `;
+                    container.appendChild(section);
+                }
+
+                section.querySelector('.session-header p').textContent = session.length + ' clips';
+                const grid = section.querySelector('.video-grid');
+
+                session.forEach(clip => {
+                    if (!existing.has(clip.filename)) {
+                        grid.appendChild(buildClipCard(clip));
+                    }
+                });
+            });
+
             initializeLazyLoading();
         });
 

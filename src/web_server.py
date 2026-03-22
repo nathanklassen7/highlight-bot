@@ -8,6 +8,7 @@ from threading import Thread
 import json
 from file_management.get_sessions import get_sessions
 from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
+from file_utils import wait_for_files_written
 from datetime import datetime
 import subprocess
 import uuid
@@ -62,10 +63,12 @@ def monitor_clips_directory():
     while True:
         current_files = set(f.name for f in CLIPS_DIR.glob("*.mp4"))
         if current_files != last_state:
+            new_files = current_files - last_state
+            wait_for_files_written([str(CLIPS_DIR / f) for f in new_files])
             sessions = get_sessions_with_metadata()
             socketio.emit('clips_update', json.dumps(sessions))
             last_state = current_files
-        time.sleep(1)  # Check every second
+        time.sleep(1)
 
 @app.route('/')
 def homepage():
@@ -253,10 +256,12 @@ def api_config_get():
             'type': field['type'],
             'value': _get_field_value(cfg, key),
         })
+    timeout_hours = _state_machine.inactivity_timeout / 3600 if _state_machine else None
     return jsonify({
         'fields': fields,
         'presets': list(PRESETS.keys()),
         'current_preset': get_current_preset(cfg),
+        'timeout_hours': timeout_hours,
     })
 
 
@@ -295,6 +300,21 @@ def api_config_update():
         return jsonify({'status': 'ok'})
     except (ValueError, TypeError) as e:
         return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/config/timeout', methods=['POST'])
+def api_config_timeout():
+    data = request.json
+    try:
+        hours = float(data.get('value', ''))
+        if hours <= 0:
+            return jsonify({'error': 'Timeout must be positive.'}), 400
+        if _state_machine:
+            _state_machine.inactivity_timeout = hours * 3600
+            _state_machine.save_timeout()
+        return jsonify({'status': 'ok'})
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid value.'}), 400
 
 
 @app.route('/api/config/reset', methods=['POST'])
