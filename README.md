@@ -62,8 +62,13 @@ Create a `.env` file in the project root:
 ```bash
 SLACK_BOT_TOKEN="xoxb-your-bot-token"
 SLACK_APP_TOKEN="xapp-your-app-level-token"
-SOUND_CARD_INDEX=3  # Run `cat /proc/asound/cards` to find the right index
 # DISABLE_SLACK=1  # Set to 1 to disable the Slack server
+```
+
+Pin the USB audio device to a stable card index at 3 so it doesn't shift between boots:
+
+```bash
+echo 'options snd_usb_audio index=3' | sudo tee /etc/modprobe.d/alsa-base.conf
 ```
 
 Both `camera_config.json` and `audio_config.json` are created automatically from their defaults on first run. To customize them beforehand:

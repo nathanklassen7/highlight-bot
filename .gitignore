@@ -13,3 +13,4 @@ time.tme
 snapshot.jpg
 camera_config.json
 audio_config.json
+*.pem

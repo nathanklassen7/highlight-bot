@@ -377,7 +377,13 @@ def init_web_server(event_bus=None, state_machine=None):
     monitor_thread = Thread(target=monitor_clips_directory, daemon=True)
     monitor_thread.start()
 
-    socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
+    ssl_ctx = None
+    cert = BASE_PATH / "cert.pem"
+    key = BASE_PATH / "key.pem"
+    if cert.exists() and key.exists():
+        ssl_ctx = (str(cert), str(key))
+
+    socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True, ssl_context=ssl_ctx)
 
 if __name__ == "__main__":
     init_web_server() 
