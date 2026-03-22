@@ -369,6 +369,14 @@ def wifi_forget():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/cert')
+def download_cert():
+    cert = BASE_PATH / "cert.pem"
+    if cert.exists():
+        return send_file(cert, download_name='highlight-bot.pem', as_attachment=True)
+    return 'No certificate configured', 404
+
+
 def init_web_server(event_bus=None, state_machine=None):
     global _event_bus, _state_machine
     _event_bus = event_bus

@@ -108,7 +108,48 @@ systemctl --user daemon-reload
 systemctl --user enable highlight-bot.service
 ```
 
-### 7. (Optional) Disable the desktop
+### 7. Install Tailscale (remote access)
+
+Tailscale lets you access the web server from your phone over any network.
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Follow the printed URL to authenticate. The Pi will reconnect automatically on every boot.
+
+### 8. Set up HTTPS
+
+Generate a self-signed certificate so browser APIs (like sharing) work over HTTPS:
+
+```bash
+openssl req -x509 -newkey rsa:2048 \
+    -keyout ~/highlight-bot/key.pem \
+    -out ~/highlight-bot/cert.pem \
+    -days 3650 -nodes -subj '/CN=highlight-bot'
+```
+
+The web server detects `cert.pem` and `key.pem` automatically and serves over HTTPS when they're present.
+
+### 9. Trust the certificate on your phone
+
+On **iPhone**:
+
+1. Open **Safari** and go to `http://<pi-tailscale-ip>:8080/cert` (use HTTP, not HTTPS)
+2. Tap **Allow** when prompted to download the profile
+3. Go to **Settings > General > VPN & Device Management** and install the profile
+4. Go to **Settings > General > About > Certificate Trust Settings** and enable full trust for "highlight-bot"
+
+On **Android**:
+
+1. Download the cert from `http://<pi-tailscale-ip>:8080/cert`
+2. Go to **Settings > Security > Encryption & credentials > Install a certificate > CA certificate**
+3. Select the downloaded file
+
+After trusting the cert, `https://<pi-tailscale-ip>:8080` will work without warnings, including as a PWA.
+
+### 10. (Optional) Disable the desktop (Not required on Pi OS Lite)
 
 Free up ~400MB of RAM by booting to CLI:
 
@@ -116,7 +157,7 @@ Free up ~400MB of RAM by booting to CLI:
 sudo raspi-config nonint do_boot_behaviour B1
 ```
 
-### 8. Reboot
+### 11. Reboot
 
 ```bash
 sudo reboot
