@@ -48,12 +48,25 @@
             Refresh Snapshot
         </button>
 
-        <div class="bg-white rounded-lg shadow-sm p-3">
-            <h2 class="font-semibold text-gray-900 mb-2 text-sm">Preset</h2>
-            <div id="presets" class="grid grid-cols-3 gap-1.5"></div>
+        <div id="recording-notice" class="hidden p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium text-center">
+            Stop recording to edit camera config.
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm p-3 space-y-2" id="fields"></div>
+        <div id="camera-config">
+            <div class="space-y-4">
+                <div class="bg-white rounded-lg shadow-sm p-3">
+                    <h2 class="font-semibold text-gray-900 mb-2 text-sm">Preset</h2>
+                    <div id="presets" class="grid grid-cols-3 gap-1.5"></div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-3 space-y-2" id="fields"></div>
+
+                <button onclick="resetConfig()"
+                    class="w-full p-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 text-sm">
+                    Reset to Defaults
+                </button>
+            </div>
+        </div>
 
         <div class="bg-white rounded-lg shadow-sm p-3">
             <div class="field-row">
@@ -62,11 +75,6 @@
                 <button class="save-btn" onclick="saveTimeout()">Save</button>
             </div>
         </div>
-
-        <button onclick="resetConfig()"
-            class="w-full p-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 text-sm">
-            Reset to Defaults
-        </button>
     </main>
 
     <script>
@@ -215,8 +223,20 @@
         function showSuccess(msg) { showToast(msg, false); }
         function hideBars() { document.getElementById('toast').classList.add('hidden'); }
 
+        async function updateConfigVisibility() {
+            try {
+                const res = await fetch('/api/bot/status');
+                const data = await res.json();
+                const isIdle = data.state === 'IDLE';
+                document.getElementById('camera-config').classList.toggle('hidden', !isIdle);
+                document.getElementById('recording-notice').classList.toggle('hidden', isIdle);
+            } catch (e) {}
+        }
+
         refreshSnapshot();
         loadConfig();
+        updateConfigVisibility();
+        setInterval(updateConfigVisibility, 2000);
     </script>
 </body>
 </html>
