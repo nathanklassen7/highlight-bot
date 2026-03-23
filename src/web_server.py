@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_file, jsonify, request
+from flask import Flask, render_template, send_file, jsonify, request, redirect
 from flask_socketio import SocketIO
 import os
 from pathlib import Path
@@ -214,11 +214,6 @@ def serve_trimmed_clip(filename):
         TRIMMED_DIR / filename,
         mimetype=mimetypes.guess_type(filename)[0]
     )
-
-
-@app.route('/viewfinder')
-def viewfinder_page():
-    return render_template('viewfinder.html')
 
 
 @app.route('/api/snapshot', methods=['POST'])
