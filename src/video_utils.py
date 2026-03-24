@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 from subprocess import check_output
-import time
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import CircularOutput
@@ -98,23 +97,19 @@ def capture_frame():
 
 
 def capture_video_data():
+    """Stop the video encoder and return the buffer duration in seconds, or 0 on failure."""
     cam, _ = _get_camera()
-    video_end_time = time.time()
     cam.stop_encoder()
     try:
-        packet_count = check_output([
+        duration_str = check_output([
             'ffprobe', '-i', VIDEO_BUFFER_FILE,
-            '-count_packets',
-            '-show_entries', 'stream=nb_read_packets',
+            '-show_entries', 'format=duration',
             '-v', 'quiet', '-of', 'csv=p=0',
         ]).decode('utf-8').strip()
-        if not packet_count or packet_count == 'N/A':
-            print("Video buffer not ready (packet count N/A)")
+        if not duration_str or duration_str == 'N/A':
+            print("Video buffer not ready (duration N/A)")
             return 0
-        print(f"FPS: {_cfg['fps']}")
-        video_duration = float(packet_count) / _cfg["fps"]
-        video_start_time = video_end_time - video_duration
-        return video_start_time
+        return float(duration_str)
     except Exception as e:
         print(f"Error reading video metadata: {e}")
         return 0

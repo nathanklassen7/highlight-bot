@@ -32,14 +32,6 @@ def _get_client():
     return _client
 
 
-def get_timestamp():
-    if not os.path.exists(timestamp_file):
-        return 0
-    with open(timestamp_file, 'r') as f:
-        line = f.readline()
-        return float(line)
-
-
 def _kill_existing_jack_capture():
     try:
         check_output(['pkill', '-f', 'jack_capture'])
@@ -73,6 +65,7 @@ def _wait_for_timestamp(timeout=TIMESTAMP_TIMEOUT, poll=0.1):
 
 
 def capture_audio_data():
+    """Dump the jack_capture timemachine buffer and return its duration in seconds, or 0 on failure."""
     _get_client().send(START)
     _get_client().send(STOP)
 
@@ -89,10 +82,7 @@ def capture_audio_data():
         if not duration_str or duration_str == 'N/A':
             print("Audio buffer not ready yet (duration N/A)")
             return 0
-        audio_duration = float(duration_str)
-        audio_end_time = get_timestamp()
-        audio_start_time = audio_end_time - audio_duration
-        return audio_start_time
+        return float(duration_str)
     except (CalledProcessError, FileNotFoundError) as e:
         print(f"Error capturing audio data: {e}")
         return 0
