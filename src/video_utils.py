@@ -101,15 +101,16 @@ def capture_video_data():
     cam, _ = _get_camera()
     cam.stop_encoder()
     try:
-        duration_str = check_output([
+        packet_count = check_output([
             'ffprobe', '-i', VIDEO_BUFFER_FILE,
-            '-show_entries', 'format=duration',
+            '-count_packets',
+            '-show_entries', 'stream=nb_read_packets',
             '-v', 'quiet', '-of', 'csv=p=0',
         ]).decode('utf-8').strip()
-        if not duration_str or duration_str == 'N/A':
-            print("Video buffer not ready (duration N/A)")
+        if not packet_count or packet_count == 'N/A':
+            print("Video buffer not ready (packet count N/A)")
             return 0
-        return float(duration_str)
+        return float(packet_count) / _cfg["fps"]
     except Exception as e:
         print(f"Error reading video metadata: {e}")
         return 0
