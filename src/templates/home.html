@@ -37,6 +37,10 @@
                 class="hidden p-4 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">
                 Stop Recording
             </button>
+            <button onclick="botAction('poke')" id="btn-poke"
+                class="hidden p-4 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600">
+                Poke (Refresh Buffers)
+            </button>
         </div>
 
         <div class="space-y-3">
@@ -81,6 +85,7 @@
                 document.getElementById('btn-start').classList.toggle('hidden', !isIdle);
                 document.getElementById('btn-clip').classList.toggle('hidden', !isRecording);
                 document.getElementById('btn-stop').classList.toggle('hidden', !isRecording);
+                document.getElementById('btn-poke').classList.toggle('hidden', !isRecording);
             } catch (e) {
                 document.getElementById('status-text').textContent = 'Unreachable';
             }

@@ -12,6 +12,7 @@ class EventType(Enum):
     ENCODE_OK = auto()
     ENCODE_FAIL = auto()
     INACTIVITY_TIMEOUT = auto()
+    POKE = auto()
 
 
 class State(Enum):

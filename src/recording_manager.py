@@ -33,6 +33,13 @@ class RecordingManager:
         start_recording_video()
         start_recording_audio()
 
+    def refresh_buffers(self):
+        """Stop and restart the circular buffers to prevent long-running encoder issues."""
+        stop_recording_video()
+        stop_recording_audio()
+        start_recording_video()
+        start_recording_audio()
+
     def capture_and_encode(self):
         """Capture current buffers and encode in a background thread.
 

@@ -33,6 +33,7 @@ class StateMachine:
             (State.RECORDING, EventType.BUTTON_LONG_PRESS): self._recording_to_idle,
             (State.RECORDING, EventType.SLACK_STOP): self._recording_to_idle,
             (State.RECORDING, EventType.INACTIVITY_TIMEOUT): self._recording_to_idle,
+            (State.RECORDING, EventType.POKE): self._poke,
 
             (State.SAVING, EventType.ENCODE_OK): self._saving_done,
             (State.SAVING, EventType.ENCODE_FAIL): self._saving_failed,
@@ -110,6 +111,12 @@ class StateMachine:
         self._recording.restart_buffers()
         self.state = State.RECORDING
         self._led.set_state(State.RECORDING)
+
+    def _poke(self, event: Event):
+        print("Poke: refreshing buffers")
+        self._last_activity = time.monotonic()
+        self._led.timeout_warning = False
+        self._recording.refresh_buffers()
 
     def _saving_failed(self, event: Event):
         print("Clip save failed")

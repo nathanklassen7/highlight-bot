@@ -93,6 +93,7 @@ def bot_action():
         'start': EventType.SLACK_START,
         'stop': EventType.SLACK_STOP,
         'clip': EventType.SLACK_CLIP,
+        'poke': EventType.POKE,
     }
     event_type = actions.get(action)
     if not event_type:
