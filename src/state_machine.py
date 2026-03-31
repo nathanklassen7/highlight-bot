@@ -5,7 +5,7 @@ from led_controller import LedController
 from recording_manager import RecordingManager
 
 SETTINGS_FILE = "settings.json"
-DEFAULT_INACTIVITY_TIMEOUT = 8 * 60 * 60
+DEFAULT_INACTIVITY_TIMEOUT = 2 * 60 * 60
 
 
 class StateMachine:
