@@ -9,7 +9,7 @@ import json
 from clip_db import get_sessions_from_db, get_clip_by_filename
 from file_management.delete_clips import delete_clip as db_delete_clip
 from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
-from file_utils import wait_for_files_written
+
 from datetime import datetime
 import subprocess
 import uuid
@@ -49,17 +49,16 @@ def get_sessions_with_metadata():
 
     return sessions_with_metadata
 
-def monitor_clips_directory():
-    """Monitor the clips directory for changes and emit updates via DB."""
-    last_state = set()
+def monitor_clips():
+    """Monitor the DB for clip changes and emit updates."""
+    from clip_db import get_all_clips
+    last_ids = set()
     while True:
-        current_files = set(f.name for f in CLIPS_DIR.glob("*.mp4"))
-        if current_files != last_state:
-            new_files = current_files - last_state
-            wait_for_files_written([str(CLIPS_DIR / f) for f in new_files])
+        current_ids = {c["id"] for c in get_all_clips()}
+        if current_ids != last_ids:
             sessions = get_sessions_with_metadata()
             socketio.emit('clips_update', json.dumps(sessions))
-            last_state = current_files
+            last_ids = current_ids
         time.sleep(1)
 
 @app.route('/')
@@ -404,7 +403,7 @@ def init_web_server(event_bus=None, state_machine=None):
     _event_bus = event_bus
     _state_machine = state_machine
 
-    monitor_thread = Thread(target=monitor_clips_directory, daemon=True)
+    monitor_thread = Thread(target=monitor_clips, daemon=True)
     monitor_thread.start()
 
     ssl_ctx = None
