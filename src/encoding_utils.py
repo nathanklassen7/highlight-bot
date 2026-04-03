@@ -1,4 +1,3 @@
-import glob
 import json
 import uuid
 from subprocess import DEVNULL, call
@@ -14,22 +13,46 @@ SNAPSHOT_QUALITY = 5
 SNAPSHOT_INTERVAL = 2
 
 
-def _generate_snapshots(clip_id, video_path):
-    """Extract a JPEG snapshot every SNAPSHOT_INTERVAL seconds."""
-    pattern = f"{SNAPSHOT_DIRECTORY}{clip_id}_%03d.jpg"
-    result = call([
-        'ffmpeg', '-y',
-        '-i', video_path,
-        '-vf', f'fps=1/{SNAPSHOT_INTERVAL},scale={SNAPSHOT_SCALE_WIDTH}:-1',
-        '-q:v', str(SNAPSHOT_QUALITY),
-        pattern,
-    ], stdout=DEVNULL, stderr=DEVNULL)
+def _get_duration(video_path):
+    from subprocess import check_output, CalledProcessError
+    try:
+        out = check_output([
+            'ffprobe', '-v', 'quiet',
+            '-show_entries', 'format=duration',
+            '-of', 'csv=p=0', video_path,
+        ]).decode().strip()
+        return float(out) if out and out != 'N/A' else 0
+    except (CalledProcessError, ValueError):
+        return 0
 
-    if result != 0:
+
+def _generate_snapshots(clip_id, video_path):
+    """Extract a JPEG snapshot every SNAPSHOT_INTERVAL seconds using keyframe seeking."""
+    duration = _get_duration(video_path)
+    if duration <= 0:
         return []
 
-    files = sorted(glob.glob(f"{SNAPSHOT_DIRECTORY}{clip_id}_*.jpg"))
-    return [f.split('/')[-1] for f in files]
+    filenames = []
+    idx = 1
+    t = 0.0
+    while t < duration:
+        snap_name = f"{clip_id}_{idx:03d}.jpg"
+        out_path = f"{SNAPSHOT_DIRECTORY}{snap_name}"
+        result = call([
+            'ffmpeg', '-y',
+            '-ss', str(t),
+            '-i', video_path,
+            '-frames:v', '1',
+            '-vf', f'scale={SNAPSHOT_SCALE_WIDTH}:-1',
+            '-q:v', str(SNAPSHOT_QUALITY),
+            out_path,
+        ], stdout=DEVNULL, stderr=DEVNULL)
+        if result == 0:
+            filenames.append(snap_name)
+        idx += 1
+        t += SNAPSHOT_INTERVAL
+
+    return filenames
 
 
 def encode_video(audio_start_time, video_start_time, video_duration):

@@ -73,7 +73,7 @@
                             {% elif clip.snapshots|length == 1 %}
                             <img src="/clips/snapshot/{{ clip.snapshots[0] }}" alt="Clip thumbnail" loading="lazy">
                             {% else %}
-                            <img src="/clips/file/{{ clip.filename }}#t=0.1" alt="Clip thumbnail" loading="lazy">
+                            <img alt="No preview available">
                             {% endif %}
                         </div>
                         </a>
@@ -150,7 +150,7 @@
             let thumbSrc;
             if (snaps.length > 1) thumbSrc = '/clips/snapshot/' + snaps[snaps.length - 2];
             else if (snaps.length === 1) thumbSrc = '/clips/snapshot/' + snaps[0];
-            else thumbSrc = '/clips/file/' + clip.filename + '#t=0.1';
+            else thumbSrc = '';
 
             const div = document.createElement('div');
             div.className = 'video-card';
