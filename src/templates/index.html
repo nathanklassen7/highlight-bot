@@ -72,7 +72,7 @@
                         </div>
                         <div class="p-4">
                             <h3 class="text-lg font-semibold text-gray-900 truncate">
-                                <a href="/clips/view/{{ clip.filename }}" class="hover:text-blue-600">{{ clip.filename }}</a>
+                                <a href="/clips/view/{{ clip.filename }}" class="hover:text-blue-600">{{ clip.created_at[:19] | replace('T', ' ') if clip.created_at else clip.filename }}</a>
                             </h3>
                             <p class="text-sm text-gray-500">
                                 Size: {{ (clip.size / 1024 / 1024)|round(2) }} MB
@@ -132,7 +132,13 @@
         // Initialize Socket.IO connection
         const socket = io();
         
+        function formatDate(iso) {
+            if (!iso) return '';
+            return iso.slice(0, 19).replace('T', ' ');
+        }
+
         function buildClipCard(clip) {
+            const label = clip.created_at ? formatDate(clip.created_at) : clip.filename;
             const div = document.createElement('div');
             div.className = 'video-card';
             div.dataset.filename = clip.filename;
@@ -145,7 +151,7 @@
                 </div>
                 <div class="p-4">
                     <h3 class="text-lg font-semibold text-gray-900 truncate">
-                        <a href="/clips/view/${clip.filename}" class="hover:text-blue-600">${clip.filename}</a>
+                        <a href="/clips/view/${clip.filename}" class="hover:text-blue-600">${label}</a>
                     </h3>
                     <p class="text-sm text-gray-500">
                         Size: ${(clip.size / 1024 / 1024).toFixed(2)} MB
@@ -240,7 +246,9 @@
         }
 
         async function deleteClip(filename) {
-            if (!confirm('Delete ' + filename + '?')) return;
+            const card = document.querySelector(`.video-card[data-filename="${filename}"]`);
+            const label = card ? card.querySelector('h3 a')?.textContent?.trim() || filename : filename;
+            if (!confirm('Delete clip from ' + label + '?')) return;
             try {
                 const res = await fetch('/api/clips/' + filename, { method: 'DELETE' });
                 const data = await res.json();
