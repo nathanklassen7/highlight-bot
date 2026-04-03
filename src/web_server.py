@@ -6,7 +6,7 @@ import mimetypes
 import time
 from threading import Thread
 import json
-from file_management.get_sessions import get_sessions
+from clip_db import get_sessions_from_db, delete_clip_record, get_clip_by_filename
 from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
 from file_utils import wait_for_files_written
 from datetime import datetime
@@ -23,42 +23,31 @@ TRIMMED_DIR = BASE_PATH / "trimmed"
 _event_bus = None
 _state_machine = None
 
-def get_clips():
-    """Get list of video clips with their metadata."""
-    clips = []
-    print(f"Clips directory: {CLIPS_DIR.absolute()}")
-    for file in CLIPS_DIR.glob("*.mp4"):
-        clips.append({
-            'filename': file.name,
-            'path': str(file),
-            'size': file.stat().st_size,
-            'modified': file.stat().st_mtime
-        })
-    return sorted(clips, key=lambda x: x['modified'], reverse=True)
-
 def get_sessions_with_metadata():
-    """Get sessions with metadata for each clip."""
-    sessions = get_sessions()
+    """Get sessions with metadata for each clip from the database."""
+    db_sessions = get_sessions_from_db()
     sessions_with_metadata = []
-    
-    for session in sessions:
+
+    for session in db_sessions:
         session_clips = []
-        for filename in session:
-            file_path = CLIPS_DIR / filename
+        for clip in session:
+            file_path = CLIPS_DIR / clip["filename"]
             if file_path.exists():
                 session_clips.append({
-                    'filename': filename,
+                    'filename': clip["filename"],
                     'path': str(file_path),
                     'size': file_path.stat().st_size,
-                    'modified': file_path.stat().st_mtime
+                    'created_at': clip["created_at"].isoformat(),
+                    'resolution_preset': clip.get("resolution_preset"),
+                    'duration': clip.get("duration"),
                 })
-        if session_clips:  # Only add non-empty sessions
+        if session_clips:
             sessions_with_metadata.append(session_clips)
-    
+
     return sessions_with_metadata
 
 def monitor_clips_directory():
-    """Monitor the clips directory for changes and emit updates."""
+    """Monitor the clips directory for changes and emit updates via DB."""
     last_state = set()
     while True:
         current_files = set(f.name for f in CLIPS_DIR.glob("*.mp4"))
@@ -125,10 +114,12 @@ def api_clips():
 @app.route('/api/clips/<path:filename>', methods=['DELETE'])
 def api_delete_clip(filename):
     file_path = CLIPS_DIR / filename
-    if not file_path.exists():
+    if not file_path.exists() and not get_clip_by_filename(filename):
         return jsonify({'error': 'File not found'}), 404
     try:
-        file_path.unlink()
+        if file_path.exists():
+            file_path.unlink()
+        delete_clip_record(filename)
         return jsonify({'status': 'ok'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -140,26 +131,27 @@ def view_clip(filename):
     file_path = CLIPS_DIR / filename
     if not file_path.exists():
         return "Video not found", 404
-        
-    # Get file metadata
-    stats = file_path.stat()
-    modified_time = datetime.fromtimestamp(stats.st_mtime)
-    
-    # Find which session this clip belongs to
+
+    clip = get_clip_by_filename(filename)
+    created = clip["created_at"] if clip else datetime.fromtimestamp(file_path.stat().st_mtime)
+    size = file_path.stat().st_size
+
     sessions = get_sessions_with_metadata()
     current_session = None
     session_index = None
-    
+
     for i, session in enumerate(sessions):
-        if any(clip['filename'] == filename for clip in session):
+        if any(c['filename'] == filename for c in session):
             current_session = session
             session_index = i
             break
-    
-    return render_template('view.html', 
+
+    return render_template('view.html',
                          filename=filename,
-                         size=stats.st_size,
-                         modified=modified_time,
+                         size=size,
+                         modified=created,
+                         resolution_preset=clip.get("resolution_preset") if clip else None,
+                         duration=clip.get("duration") if clip else None,
                          session=current_session,
                          session_index=session_index)
 

@@ -1,24 +1,23 @@
 from datetime import datetime
 
+from clip_db import get_clip_by_filename
+
 
 def get_clip_age(file_name):
-    # Extract the timestamp part from the filename
-    timestamp_str = file_name.split('.')[0]
-    
-    # Parse the timestamp into a datetime object
-    recorded_time = datetime.strptime(timestamp_str, '%Y-%m-%d-%H_%M_%S')
-    
-    # Calculate the time difference from now
-    current_time = datetime.now()
-    time_difference = current_time - recorded_time
+    clip = get_clip_by_filename(file_name)
+    if clip is None:
+        return "unknown"
+
+    recorded_time = clip["created_at"]
+    time_difference = datetime.now() - recorded_time
 
     days = time_difference.days
-    hours = time_difference.seconds//3600 
-    minutes = (time_difference.seconds//60)%60
-    seconds = time_difference.seconds%60
-    
+    hours = time_difference.seconds // 3600
+    minutes = (time_difference.seconds // 60) % 60
+    seconds = time_difference.seconds % 60
+
     message = ""
-    
+
     if days:
         message += f"{days} day{days > 1 and 's' or ''}, "
     if hours:
@@ -26,13 +25,5 @@ def get_clip_age(file_name):
     if minutes:
         message += f"{minutes} minute{minutes > 1 and 's' or ''}, "
     message += f"{seconds} second{seconds > 1 and 's' or ''} ago"
-    
-    return message
 
-def get_time_difference(file_name1, file_name2):
-    timestamp_str1 = file_name1.split('.')[0]
-    timestamp_str2 = file_name2.split('.')[0]
-    recorded_time1 = datetime.strptime(timestamp_str1, '%Y-%m-%d-%H_%M_%S')
-    recorded_time2 = datetime.strptime(timestamp_str2, '%Y-%m-%d-%H_%M_%S')
-    time_difference = recorded_time1 - recorded_time2
-    return time_difference
+    return message

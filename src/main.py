@@ -3,6 +3,7 @@ import os
 import threading
 import time
 
+from clip_db import init_db
 from consts import CLIP_DIRECTORY
 from event_bus import EventBus
 from button_controller import ButtonController
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 def main():
     time.sleep(1)
     os.makedirs(CLIP_DIRECTORY, exist_ok=True)
+    init_db()
 
     event_bus = EventBus()
     led = LedController()
