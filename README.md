@@ -18,8 +18,8 @@ To push updates, simply merge code to main and the Raspberry Pi will pull it whe
 sudo apt update && sudo apt install -y \
     python3-pip python3-venv python3-dev \
     python3-picamera2 python3-numpy python3-opencv python3-scipy python3-gpiozero \
-    jackd2 libjack-jackd2-dev liblo-dev \
-    tmux ffmpeg libcamera-apps
+    jackd2 libjack-jackd2-dev liblo-dev libsndfile1-dev \
+    tmux ffmpeg libcamera-apps git
 ```
 
 ### 2. Build jack_capture from source
