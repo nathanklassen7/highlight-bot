@@ -45,7 +45,7 @@ class RecordingManager:
 
         Emits ENCODE_OK or ENCODE_FAIL to the event bus when finished.
         """
-        video_start_time = capture_video_data()
+        video_start_time, video_duration = capture_video_data()
         audio_start_time = capture_audio_data()
 
         if video_start_time == 0:
@@ -58,12 +58,12 @@ class RecordingManager:
 
         threading.Thread(
             target=self._encode_worker,
-            args=(audio_start_time, video_start_time),
+            args=(audio_start_time, video_start_time, video_duration),
             daemon=True,
         ).start()
 
-    def _encode_worker(self, audio_start_time: float, video_start_time: float):
-        result = encode_video(audio_start_time, video_start_time)
+    def _encode_worker(self, audio_start_time: float, video_start_time: float, video_duration: float):
+        result = encode_video(audio_start_time, video_start_time, video_duration)
         if result == 0:
             print("Converted!")
             self._event_bus.emit(EventType.ENCODE_OK)

@@ -110,11 +110,11 @@ def capture_video_data():
         ]).decode('utf-8').strip()
         if not packet_count or packet_count == 'N/A':
             print("Video buffer not ready (packet count N/A)")
-            return 0
+            return 0, 0
         print(f"FPS: {_cfg['fps']}")
         video_duration = float(packet_count) / _cfg["fps"]
         video_start_time = video_end_time - video_duration
-        return video_start_time
+        return video_start_time, video_duration
     except Exception as e:
         print(f"Error reading video metadata: {e}")
-        return 0
+        return 0, 0
