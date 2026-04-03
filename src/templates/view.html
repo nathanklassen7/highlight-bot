@@ -97,9 +97,27 @@
                                     <dd class="mt-1 text-sm text-gray-900">{{ (size / 1024 / 1024)|round(2) }} MB</dd>
                                 </div>
                                 <div>
-                                    <dt class="text-sm font-medium text-gray-500">Last Modified</dt>
+                                    <dt class="text-sm font-medium text-gray-500">Recorded</dt>
                                     <dd class="mt-1 text-sm text-gray-900">{{ modified.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
                                 </div>
+                                {% if resolution %}
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Resolution</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ resolution }}{% if resolution_preset %} ({{ resolution_preset }}){% endif %}</dd>
+                                </div>
+                                {% endif %}
+                                {% if fps %}
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Frame Rate</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ fps }} fps</dd>
+                                </div>
+                                {% endif %}
+                                {% if duration %}
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Duration</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ duration|round(1) }}s</dd>
+                                </div>
+                                {% endif %}
                             </dl>
                         </div>
 

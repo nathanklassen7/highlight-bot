@@ -23,11 +23,13 @@
         .video-card:hover {
             transform: translateY(-2px);
         }
-        .video-container {
+        .thumb-container {
             position: relative;
             padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+            cursor: pointer;
         }
-        .video-container video {
+        .thumb-container img {
             position: absolute;
             top: 0;
             left: 0;
@@ -63,13 +65,18 @@
                 </div>
                 <div class="video-grid">
                     {% for clip in session %}
-                    <div class="video-card" data-filename="{{ clip.filename }}">
-                        <div class="video-container">
-                            <video controls preload="metadata">
-                                <source src="/clips/file/{{ clip.filename }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
+                    <div class="video-card" data-filename="{{ clip.filename }}" data-snapshots='{{ clip.snapshots | tojson }}'>
+                        <a href="/clips/view/{{ clip.filename }}">
+                        <div class="thumb-container">
+                            {% if clip.snapshots|length > 1 %}
+                            <img src="/clips/snapshot/{{ clip.snapshots[-2] }}" alt="Clip thumbnail" loading="lazy">
+                            {% elif clip.snapshots|length == 1 %}
+                            <img src="/clips/snapshot/{{ clip.snapshots[0] }}" alt="Clip thumbnail" loading="lazy">
+                            {% else %}
+                            <img src="/clips/file/{{ clip.filename }}#t=0.1" alt="Clip thumbnail" loading="lazy">
+                            {% endif %}
                         </div>
+                        </a>
                         <div class="p-4">
                             <h3 class="text-lg font-semibold text-gray-900 truncate">
                                 <a href="/clips/view/{{ clip.filename }}" class="hover:text-blue-600">{{ clip.created_at[:19] | replace('T', ' ') if clip.created_at else clip.filename }}</a>
@@ -139,16 +146,22 @@
 
         function buildClipCard(clip) {
             const label = clip.created_at ? formatDate(clip.created_at) : clip.filename;
+            const snaps = clip.snapshots || [];
+            let thumbSrc;
+            if (snaps.length > 1) thumbSrc = '/clips/snapshot/' + snaps[snaps.length - 2];
+            else if (snaps.length === 1) thumbSrc = '/clips/snapshot/' + snaps[0];
+            else thumbSrc = '/clips/file/' + clip.filename + '#t=0.1';
+
             const div = document.createElement('div');
             div.className = 'video-card';
             div.dataset.filename = clip.filename;
+            div.dataset.snapshots = JSON.stringify(snaps);
             div.innerHTML = `
-                <div class="video-container">
-                    <video controls preload="metadata">
-                        <source src="/clips/file/${clip.filename}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
+                <a href="/clips/view/${clip.filename}">
+                <div class="thumb-container">
+                    <img src="${thumbSrc}" alt="Clip thumbnail" loading="lazy">
                 </div>
+                </a>
                 <div class="p-4">
                     <h3 class="text-lg font-semibold text-gray-900 truncate">
                         <a href="/clips/view/${clip.filename}" class="hover:text-blue-600">${label}</a>
@@ -177,6 +190,7 @@
                     </div>
                 </div>
             `;
+            initHoverCycling(div);
             return div;
         }
 
@@ -226,24 +240,8 @@
                 });
             });
 
-            initializeLazyLoading();
+            initHoverCyclingAll();
         });
-
-        // Initialize lazy loading
-        function initializeLazyLoading() {
-            const videos = document.querySelectorAll('video');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const video = entry.target;
-                        video.src = video.querySelector('source').src;
-                        observer.unobserve(video);
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            videos.forEach(video => observer.observe(video));
-        }
 
         async function deleteClip(filename) {
             const card = document.querySelector(`.video-card[data-filename="${filename}"]`);
@@ -262,8 +260,38 @@
             }
         }
 
-        // Initial lazy loading setup
-        document.addEventListener('DOMContentLoaded', initializeLazyLoading);
+        function initHoverCycling(card) {
+            if (card.dataset.hoverInit) return;
+            const snaps = JSON.parse(card.dataset.snapshots || '[]');
+            if (snaps.length < 2) return;
+
+            card.dataset.hoverInit = '1';
+            const img = card.querySelector('.thumb-container img');
+            const defaultIdx = snaps.length > 1 ? snaps.length - 2 : 0;
+            let interval = null;
+            let idx = 0;
+
+            card.addEventListener('mouseenter', () => {
+                idx = 0;
+                img.src = '/clips/snapshot/' + snaps[idx];
+                interval = setInterval(() => {
+                    idx = (idx + 1) % snaps.length;
+                    img.src = '/clips/snapshot/' + snaps[idx];
+                }, 500);
+            });
+
+            card.addEventListener('mouseleave', () => {
+                clearInterval(interval);
+                interval = null;
+                img.src = '/clips/snapshot/' + snaps[defaultIdx];
+            });
+        }
+
+        function initHoverCyclingAll() {
+            document.querySelectorAll('.video-card[data-snapshots]').forEach(initHoverCycling);
+        }
+
+        document.addEventListener('DOMContentLoaded', initHoverCyclingAll);
 
         async function updateTemp() {
             try {

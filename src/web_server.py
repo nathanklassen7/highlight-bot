@@ -6,7 +6,8 @@ import mimetypes
 import time
 from threading import Thread
 import json
-from clip_db import get_sessions_from_db, delete_clip_record, get_clip_by_filename
+from clip_db import get_sessions_from_db, get_clip_by_filename
+from file_management.delete_clips import delete_clip as db_delete_clip
 from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
 from file_utils import wait_for_files_written
 from datetime import datetime
@@ -18,6 +19,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 BASE_PATH = Path(__file__).parent.parent
 CLIPS_DIR = BASE_PATH / "clips"
+SNAPSHOTS_DIR = CLIPS_DIR / "snapshots"
 TRIMMED_DIR = BASE_PATH / "trimmed"
 
 _event_bus = None
@@ -40,6 +42,7 @@ def get_sessions_with_metadata():
                     'created_at': clip["created_at"].isoformat(),
                     'resolution_preset': clip.get("resolution_preset"),
                     'duration': clip.get("duration"),
+                    'snapshots': clip.get("snapshots", []),
                 })
         if session_clips:
             sessions_with_metadata.append(session_clips)
@@ -106,6 +109,11 @@ def serve_clip(filename):
     )
 
 
+@app.route('/clips/snapshot/<path:filename>')
+def serve_snapshot_image(filename):
+    return send_file(SNAPSHOTS_DIR / filename, mimetype='image/jpeg')
+
+
 @app.route('/api/clips')
 def api_clips():
     return jsonify(get_sessions_with_metadata())
@@ -117,9 +125,7 @@ def api_delete_clip(filename):
     if not file_path.exists() and not get_clip_by_filename(filename):
         return jsonify({'error': 'File not found'}), 404
     try:
-        if file_path.exists():
-            file_path.unlink()
-        delete_clip_record(filename)
+        db_delete_clip(filename)
         return jsonify({'status': 'ok'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -136,6 +142,12 @@ def view_clip(filename):
     created = clip["created_at"] if clip else datetime.fromtimestamp(file_path.stat().st_mtime)
     size = file_path.stat().st_size
 
+    from camera_config import PRESETS
+    preset_name = clip.get("resolution_preset") if clip else None
+    preset = PRESETS.get(preset_name, {}) if preset_name else {}
+    resolution = f"{preset['width']}x{preset['height']}" if preset else None
+    fps = preset.get("fps")
+
     sessions = get_sessions_with_metadata()
     current_session = None
     session_index = None
@@ -150,7 +162,9 @@ def view_clip(filename):
                          filename=filename,
                          size=size,
                          modified=created,
-                         resolution_preset=clip.get("resolution_preset") if clip else None,
+                         resolution_preset=preset_name,
+                         resolution=resolution,
+                         fps=fps,
                          duration=clip.get("duration") if clip else None,
                          session=current_session,
                          session_index=session_index)
