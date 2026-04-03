@@ -9,7 +9,7 @@ def encode_video(audio_start_time, video_start_time):
     with open("camera_config.json") as f:
         fps = json.load(f)["fps"]
     timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
-one_second_later = datetime.now() + timedelta(seconds=1)
+    one_second_later = datetime.now() + timedelta(seconds=1)
     timestamp_alt = one_second_later.strftime("%Y-%m-%d-%H_%M_%S")
     output_file = f'clips/{timestamp}.mp4'
     alt_output_file = f'clips/{timestamp_alt}.mp4'
