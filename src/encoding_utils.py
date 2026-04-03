@@ -33,8 +33,9 @@ def encode_video(audio_start_time, video_start_time):
             '-c:v', 'copy',
             '-af', f'adelay={offset}',
             '-c:a', 'aac', '-ac', '1',
+            '-shortest',
             output_file,
-            '-y', '-shortest',
+            '-y',
         ], stdout=DEVNULL, stderr=DEVNULL)
 
     return call([
