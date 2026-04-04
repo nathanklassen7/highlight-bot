@@ -390,14 +390,6 @@ def wifi_forget():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/cert')
-def download_cert():
-    cert = BASE_PATH / "cert.pem"
-    if cert.exists():
-        return send_file(cert, download_name='highlight-bot.pem', as_attachment=True)
-    return 'No certificate configured', 404
-
-
 def init_web_server(event_bus=None, state_machine=None):
     global _event_bus, _state_machine
     _event_bus = event_bus
@@ -406,13 +398,7 @@ def init_web_server(event_bus=None, state_machine=None):
     monitor_thread = Thread(target=monitor_clips, daemon=True)
     monitor_thread.start()
 
-    ssl_ctx = None
-    cert = BASE_PATH / "cert.pem"
-    key = BASE_PATH / "key.pem"
-    if cert.exists() and key.exists():
-        ssl_ctx = (str(cert), str(key))
-
-    socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True, ssl_context=ssl_ctx)
+    socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
 
 if __name__ == "__main__":
     init_web_server() 
