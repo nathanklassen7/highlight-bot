@@ -11,6 +11,7 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
         <video
           ref={ref}
           controls
+          playsInline
           className="absolute top-0 left-0 w-full h-full object-contain bg-black"
         >
           <source src={`/clips/file/${filename}`} type="video/mp4" />

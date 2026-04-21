@@ -97,13 +97,18 @@ def bot_action():
 def serve_clip(filename):
     return send_file(
         CLIPS_DIR / filename,
-        mimetype=mimetypes.guess_type(filename)[0]
+        mimetype=mimetypes.guess_type(filename)[0] or 'video/mp4',
+        conditional=True,
     )
 
 
 @app.route('/clips/snapshot/<path:filename>')
 def serve_snapshot_image(filename):
-    return send_file(SNAPSHOTS_DIR / filename, mimetype='image/jpeg')
+    return send_file(
+        SNAPSHOTS_DIR / filename,
+        mimetype='image/jpeg',
+        conditional=True,
+    )
 
 
 @app.route('/api/clips')
@@ -173,7 +178,8 @@ def serve_trimmed_clip(filename):
     """Serve a trimmed video clip file."""
     return send_file(
         TRIMMED_DIR / filename,
-        mimetype=mimetypes.guess_type(filename)[0]
+        mimetype=mimetypes.guess_type(filename)[0] or 'video/mp4',
+        conditional=True,
     )
 
 
