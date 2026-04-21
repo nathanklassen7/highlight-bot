@@ -12,6 +12,8 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
           ref={ref}
           controls
           playsInline
+          preload="metadata"
+          {...{ "webkit-playsinline": "true" }}
           className="absolute top-0 left-0 w-full h-full object-contain bg-black"
         >
           <source src={`/clips/file/${filename}`} type="video/mp4" />
