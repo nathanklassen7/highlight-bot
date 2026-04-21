@@ -1,6 +1,5 @@
-from flask import Flask, render_template, send_file, jsonify, request, redirect
+from flask import Flask, send_file, send_from_directory, jsonify, request
 from flask_socketio import SocketIO
-import os
 from pathlib import Path
 import mimetypes
 import time
@@ -10,14 +9,13 @@ from clip_db import get_sessions_from_db, get_clip_by_filename
 from file_management.delete_clips import delete_clip as db_delete_clip
 from network_utils import get_wifi_status, connect_wifi, enable_hotspot, forget_network
 
-from datetime import datetime
 import subprocess
-import uuid
-
-app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 BASE_PATH = Path(__file__).parent.parent
+FRONTEND_DIST = BASE_PATH / "frontend" / "dist"
+
+app = Flask(__name__, static_folder=str(FRONTEND_DIST), static_url_path="")
+socketio = SocketIO(app, cors_allowed_origins="*")
 CLIPS_DIR = BASE_PATH / "clips"
 SNAPSHOTS_DIR = CLIPS_DIR / "snapshots"
 TRIMMED_DIR = BASE_PATH / "trimmed"
@@ -61,11 +59,6 @@ def monitor_clips():
             last_ids = current_ids
         time.sleep(1)
 
-@app.route('/')
-def homepage():
-    return render_template('home.html')
-
-
 @app.route('/api/bot/status')
 def bot_status():
     if not _state_machine:
@@ -92,12 +85,6 @@ def bot_action():
 
     _event_bus.emit(event_type)
     return jsonify({'status': 'ok'})
-
-
-@app.route('/clips')
-def clips_page():
-    sessions = get_sessions_with_metadata()
-    return render_template('index.html', sessions=sessions)
 
 
 @app.route('/clips/file/<path:filename>')
@@ -129,44 +116,6 @@ def api_delete_clip(filename):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/clips/view/<path:filename>')
-def view_clip(filename):
-    """View a specific video clip with details."""
-    file_path = CLIPS_DIR / filename
-    if not file_path.exists():
-        return "Video not found", 404
-
-    clip = get_clip_by_filename(filename)
-    created = clip["created_at"] if clip else datetime.fromtimestamp(file_path.stat().st_mtime)
-    size = file_path.stat().st_size
-
-    from camera_config import PRESETS
-    preset_name = clip.get("resolution_preset") if clip else None
-    preset = PRESETS.get(preset_name, {}) if preset_name else {}
-    resolution = f"{preset['width']}x{preset['height']}" if preset else None
-    fps = preset.get("fps")
-
-    sessions = get_sessions_with_metadata()
-    current_session = None
-    session_index = None
-
-    for i, session in enumerate(sessions):
-        if any(c['filename'] == filename for c in session):
-            current_session = session
-            session_index = i
-            break
-
-    return render_template('view.html',
-                         filename=filename,
-                         size=size,
-                         modified=created,
-                         resolution_preset=preset_name,
-                         resolution=resolution,
-                         fps=fps,
-                         duration=clip.get("duration") if clip else None,
-                         session=current_session,
-                         session_index=session_index)
 
 @app.route('/trim/<path:filename>', methods=['POST'])
 def trim_video(filename):
@@ -238,11 +187,6 @@ def serve_snapshot():
     if not snapshot.exists():
         return 'No snapshot', 404
     return send_file(snapshot, mimetype='image/jpeg')
-
-
-@app.route('/config')
-def config_page():
-    return render_template('config.html')
 
 
 @app.route('/api/config')
@@ -342,11 +286,6 @@ def api_temperature():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/wifi')
-def wifi_page():
-    return render_template('wifi.html')
-
-
 @app.route('/api/wifi/status')
 def wifi_status():
     try:
@@ -388,6 +327,15 @@ def wifi_forget():
         return jsonify({'status': 'ok'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    """Serve the React SPA. Static assets are served directly; all other
+    paths return index.html so React Router can handle them."""
+    if path and (FRONTEND_DIST / path).is_file():
+        return send_from_directory(str(FRONTEND_DIST), path)
+    return send_from_directory(str(FRONTEND_DIST), 'index.html')
 
 
 def init_web_server(event_bus=None, state_machine=None):
