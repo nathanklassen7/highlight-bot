@@ -8,7 +8,7 @@ from video_utils import (
     capture_video_data, start_camera, stop_camera,
     start_recording_video, stop_recording_video,
 )
-from encoding_utils import encode_video
+from encoding_utils import encode_video, generate_snapshots
 import os
 
 
@@ -63,10 +63,17 @@ class RecordingManager:
         ).start()
 
     def _encode_worker(self, audio_start_time: float, video_start_time: float, video_duration: float):
-        result = encode_video(audio_start_time, video_start_time, video_duration)
+        result, clip_id, filename, output_file = encode_video(
+            audio_start_time, video_start_time, video_duration
+        )
         if result == 0:
             print("Converted!")
             self._event_bus.emit(EventType.ENCODE_OK)
+            threading.Thread(
+                target=generate_snapshots,
+                args=(clip_id, filename, output_file),
+                daemon=True,
+            ).start()
         else:
             print("Error converting .h264 file and joining audio")
             self._event_bus.emit(EventType.ENCODE_FAIL)

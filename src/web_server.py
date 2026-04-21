@@ -48,15 +48,21 @@ def get_sessions_with_metadata():
     return sessions_with_metadata
 
 def monitor_clips():
-    """Monitor the DB for clip changes and emit updates."""
+    """Monitor the DB for clip changes and emit updates.
+
+    The fingerprint includes snapshot counts so background thumbnail writes
+    also trigger an update without requiring a new clip row.
+    """
     from clip_db import get_all_clips
-    last_ids = set()
+    last_fingerprint: frozenset = frozenset()
     while True:
-        current_ids = {c["id"] for c in get_all_clips()}
-        if current_ids != last_ids:
+        current_fingerprint = frozenset(
+            (c["id"], len(c["snapshots"])) for c in get_all_clips()
+        )
+        if current_fingerprint != last_fingerprint:
             sessions = get_sessions_with_metadata()
             socketio.emit('clips_update', json.dumps(sessions))
-            last_ids = current_ids
+            last_fingerprint = current_fingerprint
         time.sleep(1)
 
 @app.route('/api/bot/status')
