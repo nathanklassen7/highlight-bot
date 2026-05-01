@@ -14,7 +14,6 @@ snapshot.jpg
 camera_config.json
 audio_config.json
 settings.json
-*.pem
 
 # Frontend
 frontend/node_modules/
