@@ -6,6 +6,7 @@ import time
 from clip_db import init_db
 from consts import CLIP_DIRECTORY, SNAPSHOT_DIRECTORY
 from event_bus import EventBus
+from bluetooth_shutter_controller import BluetoothShutterController
 from button_controller import ButtonController
 from led_controller import LedController
 from recording_manager import RecordingManager
@@ -29,6 +30,7 @@ def main():
     led = LedController()
     recording = RecordingManager(event_bus)
     button = ButtonController(event_bus)
+    bt_shutter = BluetoothShutterController(event_bus)
     sm = StateMachine(event_bus, led, recording)
 
     disable_slack = os.environ.get('DISABLE_SLACK') == '1'
@@ -43,6 +45,7 @@ def main():
     threading.Thread(target=init_web_server, args=(event_bus, sm), daemon=True).start()
 
     button.start()
+    bt_shutter.start()
     led.start()
 
     try:
@@ -52,6 +55,7 @@ def main():
     finally:
         recording.stop()
         button.cleanup()
+        bt_shutter.cleanup()
         led.stop()
 
 
