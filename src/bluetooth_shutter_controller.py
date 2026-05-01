@@ -26,10 +26,13 @@ KEY_UP = 0
 # often disconnect when idle to save power.
 DISCOVERY_RETRY_S = 2.0
 
-# Optional substring (case-insensitive) used to disambiguate from other
-# input devices (e.g. an attached keyboard). When unset we accept any
-# device whose capability set includes both shutter keys.
-DEVICE_NAME_HINT = os.environ.get("BT_SHUTTER_DEVICE_NAME", "")
+# Substring (case-insensitive) of the input device name to match. We
+# require an exact-ish match rather than falling back to capability
+# detection, because other input devices on the Pi (notably the HDMI
+# CEC remote, "vc4-hdmi-1") also advertise KEY_VOLUMEUP / KEY_ENTER
+# and would otherwise be picked up when the shutter isn't connected
+# yet. Override via BT_SHUTTER_DEVICE_NAME in .env.
+DEVICE_NAME = os.environ.get("BT_SHUTTER_DEVICE_NAME", "AB Shutter3")
 
 
 class BluetoothShutterController:
@@ -71,6 +74,7 @@ class BluetoothShutterController:
         self.stop()
 
     def _run(self):
+        logger.info("Waiting for bluetooth shutter '%s'...", DEVICE_NAME)
         while not self._stop_event.is_set():
             device = self._find_device()
             if device is None:
@@ -112,24 +116,18 @@ class BluetoothShutterController:
             logger.exception("Failed to enumerate input devices")
             return None
 
+        target = DEVICE_NAME.lower()
         for path in paths:
             try:
                 device = evdev.InputDevice(path)
             except Exception:
                 continue
 
-            if (
-                DEVICE_NAME_HINT
-                and DEVICE_NAME_HINT.lower() not in device.name.lower()
-            ):
+            if target not in device.name.lower():
                 device.close()
                 continue
 
-            keys = set(device.capabilities().get(ecodes.EV_KEY, []))
-            if SHORT_PRESS_KEY in keys and LONG_PRESS_KEY in keys:
-                return device
-
-            device.close()
+            return device
 
         return None
 
