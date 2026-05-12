@@ -49,7 +49,12 @@ else
 
     # Pull latest code
     echo "Pulling latest code..."
-    cd "$SCRIPT_DIR" && git pull origin main
+    if cd "$SCRIPT_DIR" && git pull origin main; then
+        echo "Installing Python requirements..."
+        "$SCRIPT_DIR/env/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+    else
+        echo "Warning: git pull failed; skipping requirements install."
+    fi
 
     # Window 1: main app (normal mode — Slack + web server)
     tmux new-window -t "$SESSION" -n app
