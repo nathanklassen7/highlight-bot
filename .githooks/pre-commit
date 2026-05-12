@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Rebuild the React bundle whenever frontend sources are part of the commit,
+# then stage the rebuilt `frontend/dist/` so it ships in the same commit.
+#
+# Skip with: SKIP_FRONTEND_BUILD=1 git commit ...
+
+set -euo pipefail
+
+if [[ "${SKIP_FRONTEND_BUILD:-0}" == "1" ]]; then
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Watch sources + build inputs; ignore changes that are dist-only.
+WATCH_REGEX='^frontend/(src/|index\.html$|package(-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$)'
+
+if ! git diff --cached --name-only | grep -Eq "$WATCH_REGEX"; then
+  exit 0
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "pre-commit: npm not found; skipping frontend build." >&2
+  exit 0
+fi
+
+echo "pre-commit: frontend sources changed, rebuilding…"
+
+cd frontend
+if [[ ! -d node_modules ]]; then
+  npm ci
+fi
+npm run build
+cd "$REPO_ROOT"
+
+git add frontend/dist
