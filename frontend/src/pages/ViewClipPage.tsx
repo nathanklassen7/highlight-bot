@@ -40,7 +40,7 @@ export function ViewClipPage() {
     });
   }, [filename]);
 
-  if (!filename) return <p>Not found</p>;
+  if (!filename) return <p>Clip not found</p>;
 
   return (
     <>
