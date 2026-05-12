@@ -14,7 +14,7 @@ import subprocess
 BASE_PATH = Path(__file__).parent.parent
 FRONTEND_DIST = BASE_PATH / "frontend" / "dist"
 
-app = Flask(__name__, static_folder=str(FRONTEND_DIST), static_url_path="")
+app = Flask(__name__, static_folder=None)
 socketio = SocketIO(app, cors_allowed_origins="*")
 CLIPS_DIR = BASE_PATH / "clips"
 SNAPSHOTS_DIR = CLIPS_DIR / "snapshots"
