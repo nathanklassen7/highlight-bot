@@ -29,9 +29,9 @@ def main():
     event_bus = EventBus()
     led = LedController()
     recording = RecordingManager(event_bus)
-    button = ButtonController(event_bus)
     bt_shutter = BluetoothShutterController(event_bus)
     sm = StateMachine(event_bus, led, recording)
+    button = ButtonController(event_bus, lambda: sm.state)
 
     disable_slack = os.environ.get('DISABLE_SLACK') == '1'
     travel_mode = os.environ.get('TRAVEL_MODE') == '1'
