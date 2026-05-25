@@ -5,7 +5,7 @@ from gpiozero import Button
 from event_bus import EventBus, EventType, State
 
 BUTTON_PIN = 3
-LONG_PRESS_TIME = 0.5
+LONG_PRESS_TIME = 1
 DEBOUNCE_S = 0.05
 
 
