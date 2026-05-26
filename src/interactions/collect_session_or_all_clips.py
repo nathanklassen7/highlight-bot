@@ -24,8 +24,10 @@ def collect_session_or_all(interaction: BlockInteraction, collect_all: Optional[
     interaction.update_blocks(in_progress_blocks, "Collecting...")
 
     file_count = len(files_to_send)
-
-    interaction.start_thread(f"Sending {file_count} clips!" if file_count > 1 else "Sending 1 clip!")
+    clip_word = 'clip' if file_count == 1 else 'clips'
+    interaction.start_thread(
+        f'<@{interaction.user_id}> collected {file_count} {clip_word}!'
+    )
 
     def upload_files_to_thread(message, filepath):
         return interaction.post_file_in_thread(filepath, message)

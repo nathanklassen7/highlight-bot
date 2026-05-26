@@ -14,6 +14,7 @@ class BlockInteraction:
             self.action_id = action.get('action_id', 'null')
             self.button_value = action.get('value', '')
         self.channel_id = payload['container']['channel_id']
+        self.user_id = payload['user']['id']
         self.thread_ts = None
 
     def update_blocks(self, blocks: list, message: str):
