@@ -1,6 +1,8 @@
+import logging
 import os
 import re
-import logging
+import subprocess
+import threading
 
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -23,6 +25,13 @@ app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 
 _event_bus = None
 _state_machine = None
+
+
+def _reboot_system():
+    try:
+        subprocess.run(['sudo', 'reboot'], check=True)
+    except Exception as e:
+        logger.error('Reboot failed: %s', e)
 
 
 def init_server(event_bus=None, state_machine=None):
@@ -149,6 +158,11 @@ def handle_command(ack, command):
 
     if command_text == 'status' and _state_machine:
         ack(f'Status: {_state_machine.state.name}')
+        return
+
+    if command_text == 'reboot':
+        ack('Rebooting!')
+        threading.Timer(1.0, _reboot_system).start()
         return
 
     ack()

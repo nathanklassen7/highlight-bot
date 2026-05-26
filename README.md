@@ -170,6 +170,7 @@ To wake it up, just press the clip button. It should start flashing red again.
 | `/hl config <key> <value>`  | Update a config value (while idle)   |
 | `/hl timeout`               | Show inactivity timeout              |
 | `/hl timeout <hours>`       | Set inactivity timeout               |
+| `/hl reboot`                | Reboot the Raspberry Pi              |
 
 You can also @mention the bot with `start`, `stop`, `clip`, or `status`.
 
