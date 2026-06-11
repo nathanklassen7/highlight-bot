@@ -21,6 +21,7 @@ class LedController:
         self._running = False
         self._thread: threading.Thread | None = None
         self._transient: str | None = None
+        self._record_anchor = time.monotonic()
         self.timeout_warning = False
 
         GPIO.setmode(GPIO.BCM)
@@ -34,6 +35,8 @@ class LedController:
 
     def set_state(self, state: State):
         with self._lock:
+            if state == State.RECORDING and self._state != State.RECORDING:
+                self._record_anchor = time.monotonic()
             self._state = state
 
     def play_transition(self, pattern: str):
@@ -60,6 +63,7 @@ class LedController:
                 transient = self._transient
                 self._transient = None
                 state = self._state
+                record_anchor = self._record_anchor
 
             if transient:
                 self._play_pattern(transient)
@@ -69,12 +73,13 @@ class LedController:
                 self._write("record", False)
                 self._write("write", False)
             elif state == State.RECORDING:
+                elapsed = time.monotonic() - record_anchor
                 if self.timeout_warning:
                     # flash flash pause: on off on off off off
-                    phase = int(time.time() / 0.2) % 6
+                    phase = int(elapsed / 0.2) % 6
                     flash = phase in (0, 2)
                 else:
-                    flash = int(time.time()) % 2 == 0
+                    flash = int(elapsed) % 2 == 0
                 self._write("record", flash)
                 self._write("write", False)
             elif state == State.SAVING:
