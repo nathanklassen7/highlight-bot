@@ -57,8 +57,11 @@ def handle_mention(event, say):
         _event_bus.emit(EventType.SLACK_STOP)
         message = "Stopping recording!"
     elif "clip" in text and _event_bus:
-        _event_bus.emit(EventType.SLACK_CLIP)
-        message = "Saving clip!"
+        if _state_machine and _state_machine.state == State.RECORDING:
+            _event_bus.emit(EventType.SLACK_CLIP)
+            message = "Saving clip!"
+        else:
+            message = "I'm sleeping! use /hl record to start recording."
     elif "status" in text and _state_machine:
         message = f"Status: {_state_machine.state.name}"
     else:
@@ -90,8 +93,11 @@ def handle_command(ack, command):
         return
 
     if command_text == 'clip' and _event_bus:
-        _event_bus.emit(EventType.SLACK_CLIP)
-        ack('Saving clip.')
+        if _state_machine and _state_machine.state == State.RECORDING:
+            _event_bus.emit(EventType.SLACK_CLIP)
+            ack('Saving clip.')
+        else:
+            ack("I'm sleeping! use /hl record to start recording.")
         return
 
     if command_text == 'pic':
