@@ -4,6 +4,7 @@
     "fps": 50,
     "bitrate": 10000000,
     "buffer_duration": 20,
+    "audio_gain": 1.0,
     "controls": {
         "FrameRate": 60
     }

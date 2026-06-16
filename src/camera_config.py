@@ -15,6 +15,7 @@ PRESETS = {
 
 EDITABLE_FIELDS = {
     "buffer_duration": {"label": "Buffer Duration (s)", "type": "int"},
+    "audio_gain": {"label": "Audio Gain", "type": "float", "reinit_camera": False},
     "ExposureTime": {"label": "Exposure Time (µs)", "type": "int", "control": True},
     "AnalogueGain": {"label": "Analogue Gain", "type": "float", "control": True},
     "AeEnable": {"label": "Auto Exposure", "type": "bool", "control": True},
@@ -81,7 +82,8 @@ def update_field(key, value):
             cfg.setdefault("controls", {})["FrameRate"] = value
 
     write_config(cfg)
-    reinitialize_camera()
+    if field.get("reinit_camera", True):
+        reinitialize_camera()
     return cfg
 
 

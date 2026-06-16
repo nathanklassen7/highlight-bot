@@ -76,7 +76,9 @@ def encode_video(audio_start_time, video_start_time, video_duration):
     expected to be kicked off by the caller in a background thread.
     """
     with open("camera_config.json") as f:
-        fps = json.load(f)["fps"]
+        cfg = json.load(f)
+    fps = cfg["fps"]
+    audio_gain = cfg.get("audio_gain", 1.0)
 
     clip_id = uuid.uuid4().hex
     filename = f"{clip_id}.mp4"
@@ -84,6 +86,9 @@ def encode_video(audio_start_time, video_start_time, video_duration):
 
     if audio_start_time:
         offset = int((audio_start_time - video_start_time) * 1000)
+        audio_filters = [f'adelay={offset}']
+        if audio_gain != 1.0:
+            audio_filters.append(f'volume={audio_gain}')
         cmd = [
             'ffmpeg',
             '-y',
@@ -91,7 +96,7 @@ def encode_video(audio_start_time, video_start_time, video_duration):
             '-i', VIDEO_BUFFER_FILE,
             '-i', AUDIO_BUFFER_FILE,
             '-c:v', 'copy',
-            '-af', f'adelay={offset}',
+            '-af', ','.join(audio_filters),
             '-c:a', 'aac', '-ac', '1',
         ]
         if video_duration:
