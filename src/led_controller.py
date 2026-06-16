@@ -13,6 +13,10 @@ FLASH_SPEED = 0.2
 TRANSITION_FLASH_COUNT = 3
 ERROR_FLASH_COUNT = 10
 
+RECORD_SEQUENCE_GAP = 0.1
+RECORD_SEQUENCE_HOLD = 0.2
+RECORD_SEQUENCE_CYCLES = 3
+
 
 class LedController:
     def __init__(self):
@@ -57,6 +61,32 @@ class LedController:
         for pin in OUTPUT_PIN_MAP.values():
             GPIO.output(pin, GPIO.LOW)
 
+    def _all_off(self):
+        for led_name in OUTPUT_PIN_MAP:
+            self._write(led_name, False)
+
+    def _play_record_start(self):
+        """Cascade the LEDs on (write, power, record), hold, then clear."""
+        for _ in range(RECORD_SEQUENCE_CYCLES):
+            self._all_off()
+            for led_name in ("write", "on", "record"):
+                time.sleep(RECORD_SEQUENCE_GAP)
+                self._write(led_name, True)
+            time.sleep(RECORD_SEQUENCE_HOLD)
+            self._all_off()
+        self._write("on", True)
+
+    def _play_record_stop(self):
+        """Mirror of the start cascade: all on, then clear in reverse."""
+        for _ in range(RECORD_SEQUENCE_CYCLES):
+            for led_name in OUTPUT_PIN_MAP:
+                self._write(led_name, True)
+            time.sleep(RECORD_SEQUENCE_HOLD)
+            for led_name in ("record", "on", "write"):
+                self._write(led_name, False)
+                time.sleep(RECORD_SEQUENCE_GAP)
+        self._write("on", True)
+
     def _run(self):
         while self._running:
             with self._lock:
@@ -67,6 +97,9 @@ class LedController:
 
             if transient:
                 self._play_pattern(transient)
+                with self._lock:
+                    if self._state == State.RECORDING:
+                        self._record_anchor = time.monotonic()
                 continue
 
             if state == State.IDLE:
@@ -88,21 +121,28 @@ class LedController:
 
             time.sleep(0.1)
 
-    def _play_pattern(self, pattern: str):
-        led = "record" if pattern in ("start", "stop") else "write"
-        count = {
-            "start": TRANSITION_FLASH_COUNT,
-            "stop": TRANSITION_FLASH_COUNT * 2,
-            "saved": TRANSITION_FLASH_COUNT,
-            "error": ERROR_FLASH_COUNT,
-        }.get(pattern, TRANSITION_FLASH_COUNT)
-
+    def _flash_write(self, count: int):
         for _ in range(count):
-            self._write(led, False)
+            self._write("write", False)
             time.sleep(FLASH_SPEED)
-            self._write(led, True)
+            self._write("write", True)
             time.sleep(FLASH_SPEED)
-        self._write(led, False)
+        self._write("write", False)
 
+    def _play_save_success(self):
+        """Flash the write LED to confirm a clip was saved."""
+        self._flash_write(TRANSITION_FLASH_COUNT)
+
+    def _play_save_error(self):
+        """Flash the write LED rapidly to signal a failed save."""
+        self._flash_write(ERROR_FLASH_COUNT)
+
+    def _play_pattern(self, pattern: str):
         if pattern == "start":
-            time.sleep(FLASH_SPEED * 2)
+            self._play_record_start()
+        elif pattern == "stop":
+            self._play_record_stop()
+        elif pattern == "saved":
+            self._play_save_success()
+        elif pattern == "error":
+            self._play_save_error()
