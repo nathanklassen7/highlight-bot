@@ -15,6 +15,7 @@ from file_management.delete_clips import delete_all_clips, delete_clip
 from file_management.file_read_lock import file_read_lock
 from file_management.get_blocks_from_files import get_blocks_from_files
 from interactions.collect_session_or_all_clips import collect_session_or_all
+from interactions.preview_clips import preview_clip, preview_session
 from server_utils import (post_ephemeral_blocks,
                          post_message_to_channel_or_thread, post_public_blocks,
                          post_file_to_channel_or_thread)
@@ -411,6 +412,22 @@ def handle_interaction(ack, body, action):
         except Exception as e:
             file_read_lock.release()
             interaction.update_with_message(f"Error collecting session: {e}")
+        return
+
+    if interaction.action_id == "preview-clip":
+        try:
+            preview_clip(interaction)
+        except Exception as e:
+            file_read_lock.release()
+            interaction.update_with_message(f"Error previewing clip: {e}")
+        return
+
+    if interaction.action_id == "preview-session":
+        try:
+            preview_session(interaction)
+        except Exception as e:
+            file_read_lock.release()
+            interaction.update_with_message(f"Error previewing session: {e}")
         return
 
     file_read_lock.release()
