@@ -10,12 +10,15 @@ from consts import CLIP_DIRECTORY
 
 logger = logging.getLogger(__name__)
 
+SLOWMO_SPEED = 0.5
+
 
 @dataclass
 class EditSegment:
     path: str
     start: float
     end: float
+    speed: float = 1.0
 
     @property
     def duration(self) -> float:
@@ -46,6 +49,23 @@ def _has_audio_stream(path: str) -> bool:
         return False
 
 
+def _video_filter(i: int, seg: EditSegment) -> str:
+    # Half speed => PTS * 2 (frames take twice as long)
+    pts_factor = 1.0 / seg.speed
+    return (
+        f"[{i}:v]trim=start={seg.start}:end={seg.end},"
+        f"setpts={pts_factor}*(PTS-STARTPTS)[v{i}]"
+    )
+
+
+def _audio_filter(i: int, seg: EditSegment) -> str:
+    # atempo accepts 0.5–2.0; 0.5 speed is within range
+    return (
+        f"[{i}:a]atrim=start={seg.start}:end={seg.end},"
+        f"asetpts=PTS-STARTPTS,atempo={seg.speed}[a{i}]"
+    )
+
+
 def stitch_segments(segments: list[EditSegment]) -> str:
     """Trim and concat segments into a temp MP4. Caller must delete the returned path."""
     if not segments:
@@ -54,6 +74,8 @@ def stitch_segments(segments: list[EditSegment]) -> str:
     for seg in segments:
         if seg.start < 0 or seg.end <= seg.start:
             raise ValueError(f"Invalid range {seg.start}-{seg.end} for {seg.path}")
+        if seg.speed <= 0:
+            raise ValueError(f"Invalid speed {seg.speed} for {seg.path}")
         if not Path(seg.path).is_file():
             raise FileNotFoundError(f"Clip file not found: {seg.path}")
 
@@ -72,12 +94,8 @@ def stitch_segments(segments: list[EditSegment]) -> str:
 
     if keep_audio:
         for i, seg in enumerate(segments):
-            filter_parts.append(
-                f"[{i}:v]trim=start={seg.start}:end={seg.end},setpts=PTS-STARTPTS[v{i}]"
-            )
-            filter_parts.append(
-                f"[{i}:a]atrim=start={seg.start}:end={seg.end},asetpts=PTS-STARTPTS[a{i}]"
-            )
+            filter_parts.append(_video_filter(i, seg))
+            filter_parts.append(_audio_filter(i, seg))
             concat_inputs.append(f"[v{i}][a{i}]")
         filter_parts.append(
             f"{''.join(concat_inputs)}concat=n={n}:v=1:a=1[outv][outa]"
@@ -104,9 +122,7 @@ def stitch_segments(segments: list[EditSegment]) -> str:
         ]
     else:
         for i, seg in enumerate(segments):
-            filter_parts.append(
-                f"[{i}:v]trim=start={seg.start}:end={seg.end},setpts=PTS-STARTPTS[v{i}]"
-            )
+            filter_parts.append(_video_filter(i, seg))
             concat_inputs.append(f"[v{i}]")
         filter_parts.append(f"{''.join(concat_inputs)}concat=n={n}:v=1:a=0[outv]")
         filter_complex = ";".join(filter_parts)

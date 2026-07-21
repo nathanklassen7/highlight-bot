@@ -9,7 +9,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from clip_db import ClipPrefixError, resolve_clip_prefix
 from consts import CLIP_DIRECTORY
-from edit_utils import EditSegment, stitch_segments
+from edit_utils import EditSegment, SLOWMO_SPEED, stitch_segments
 from interactions.BlockInteraction import BlockInteraction
 from file_management.delete_clips import delete_all_clips, delete_clip
 from file_management.file_read_lock import file_read_lock
@@ -29,10 +29,16 @@ app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 _event_bus = None
 _state_machine = None
 
+# id start-end  OR  id start-replayStart-replayEnd-end
 EDIT_SEGMENT_RE = re.compile(
-    r"([0-9a-f]{8,})\s+(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)"
+    r"([0-9a-f]{8,})\s+"
+    r"(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)"
+    r"(?:-(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?))?"
 )
-EDIT_USAGE = "Usage: /hl edit <id> <start>-<end> ..."
+EDIT_USAGE = (
+    "Usage: /hl edit <id> <start>-<end> "
+    "or <id> <start>-<replayStart>-<replayEnd>-<end> ..."
+)
 
 
 def _reboot_system():
@@ -55,18 +61,46 @@ def _parse_edit_segments(edit_body: str) -> list[EditSegment]:
 
     segments: list[EditSegment] = []
     for match in matches:
-        prefix, start_s, end_s = match.group(1), match.group(2), match.group(3)
-        start, end = float(start_s), float(end_s)
-        if start < 0 or end <= start:
-            raise ValueError(f"Invalid range {start_s}-{end_s} for {prefix[:8]}")
+        prefix = match.group(1)
+        t0, t1 = float(match.group(2)), float(match.group(3))
         clip = resolve_clip_prefix(prefix)
-        segments.append(
-            EditSegment(
-                path=f"{CLIP_DIRECTORY}{clip['filename']}",
-                start=start,
-                end=end,
+        path = f"{CLIP_DIRECTORY}{clip['filename']}"
+
+        if match.group(4) is not None:
+            # Four timestamps: start-replayStart-replayEnd-end
+            replay_start, end = t1, float(match.group(5))
+            replay_end = float(match.group(4))
+            start = t0
+            if start < 0 or end <= start:
+                raise ValueError(
+                    f"Invalid range {match.group(2)}-{match.group(5)} for {prefix[:8]}"
+                )
+            if replay_start < 0 or replay_end <= replay_start:
+                raise ValueError(
+                    f"Invalid replay range {match.group(3)}-{match.group(4)} "
+                    f"for {prefix[:8]}"
+                )
+            if replay_start < start or replay_end > end:
+                raise ValueError(
+                    f"Replay {match.group(3)}-{match.group(4)} must be within "
+                    f"{match.group(2)}-{match.group(5)} for {prefix[:8]}"
+                )
+            segments.append(EditSegment(path=path, start=start, end=end, speed=1.0))
+            segments.append(
+                EditSegment(
+                    path=path,
+                    start=replay_start,
+                    end=replay_end,
+                    speed=SLOWMO_SPEED,
+                )
             )
-        )
+        else:
+            start, end = t0, t1
+            if start < 0 or end <= start:
+                raise ValueError(
+                    f"Invalid range {match.group(2)}-{match.group(3)} for {prefix[:8]}"
+                )
+            segments.append(EditSegment(path=path, start=start, end=end, speed=1.0))
     return segments
 
 
