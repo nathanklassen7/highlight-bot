@@ -1,4 +1,4 @@
-"""Create highly compressed preview MP4s (480p, keyframes only, ultrafast)."""
+"""Create highly compressed preview MP4s (360p, 24fps, ultrafast)."""
 
 import logging
 import subprocess
@@ -9,7 +9,8 @@ from consts import CLIP_DIRECTORY
 
 logger = logging.getLogger(__name__)
 
-PREVIEW_HEIGHT = 480
+PREVIEW_HEIGHT = 360
+PREVIEW_FPS = 24
 PREVIEW_CRF = 32
 PREVIEW_AUDIO_BITRATE = "64k"
 
@@ -39,19 +40,16 @@ def _has_audio_stream(path: str) -> bool:
 
 
 def make_clip_preview(input_path: str) -> str:
-    """Compress a clip to 480p using keyframes only + ultrafast. Caller deletes path."""
+    """Compress a clip to 360p/24fps with ultrafast preset. Caller deletes path."""
     if not Path(input_path).is_file():
         raise FileNotFoundError(f"Clip file not found: {input_path}")
 
     output_path = f"{CLIP_DIRECTORY}preview_{uuid.uuid4().hex}.mp4"
     keep_audio = _has_audio_stream(input_path)
-    # -skip_frame nokey: decode I-frames only (much faster than full decode)
     cmd = [
         "ffmpeg", "-y",
-        "-skip_frame", "nokey",
         "-i", input_path,
-        "-vf", f"scale=-2:{PREVIEW_HEIGHT}",
-        "-vsync", "vfr",
+        "-vf", f"scale=-2:{PREVIEW_HEIGHT},fps={PREVIEW_FPS}",
         "-c:v", "libx264",
         "-preset", "ultrafast",
         "-crf", str(PREVIEW_CRF),
