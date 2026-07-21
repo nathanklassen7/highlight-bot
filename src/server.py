@@ -7,6 +7,9 @@ import threading
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
+from clip_db import ClipPrefixError, resolve_clip_prefix
+from consts import CLIP_DIRECTORY
+from edit_utils import EditSegment, stitch_segments
 from interactions.BlockInteraction import BlockInteraction
 from file_management.delete_clips import delete_all_clips, delete_clip
 from file_management.file_read_lock import file_read_lock
@@ -26,12 +29,68 @@ app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 _event_bus = None
 _state_machine = None
 
+EDIT_SEGMENT_RE = re.compile(
+    r"([0-9a-f]{8,})\s+(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)"
+)
+EDIT_USAGE = "Usage: /hl edit <id> <start>-<end> ..."
+
 
 def _reboot_system():
     try:
         subprocess.run(['sudo', 'reboot'], check=True)
     except Exception as e:
         logger.error('Reboot failed: %s', e)
+
+
+def _parse_edit_segments(edit_body: str) -> list[EditSegment]:
+    matches = list(EDIT_SEGMENT_RE.finditer(edit_body))
+    if not matches:
+        raise ValueError(EDIT_USAGE)
+
+    # Reject leftover tokens that aren't part of a valid segment pair
+    consumed = EDIT_SEGMENT_RE.sub(" ", edit_body)
+    leftover = consumed.strip()
+    if leftover:
+        raise ValueError(f"Could not parse: {leftover}\n{EDIT_USAGE}")
+
+    segments: list[EditSegment] = []
+    for match in matches:
+        prefix, start_s, end_s = match.group(1), match.group(2), match.group(3)
+        start, end = float(start_s), float(end_s)
+        if start < 0 or end <= start:
+            raise ValueError(f"Invalid range {start_s}-{end_s} for {prefix[:8]}")
+        clip = resolve_clip_prefix(prefix)
+        segments.append(
+            EditSegment(
+                path=f"{CLIP_DIRECTORY}{clip['filename']}",
+                start=start,
+                end=end,
+            )
+        )
+    return segments
+
+
+def _run_edit_and_upload(channel_id: str, user_id: str, segments: list[EditSegment]):
+    output_path = None
+    try:
+        output_path = stitch_segments(segments)
+        post_file_to_channel_or_thread(channel_id, output_path, "Edited highlight")
+    except Exception as e:
+        logger.error("Edit failed: %s", e)
+        post_ephemeral_blocks(
+            channel_id,
+            [{
+                "type": "section",
+                "text": {"type": "plain_text", "text": f"Edit failed: {e}"},
+            }],
+            user_id,
+        )
+    finally:
+        if output_path and os.path.isfile(output_path):
+            try:
+                os.unlink(output_path)
+            except OSError as e:
+                logger.error("Failed to delete temp edit file %s: %s", output_path, e)
 
 
 def init_server(event_bus=None, state_machine=None):
@@ -169,6 +228,30 @@ def handle_command(ack, command):
     if command_text == 'reboot':
         ack('Rebooting!')
         threading.Timer(1.0, _reboot_system).start()
+        return
+
+    if command_text == 'ids':
+        ack()
+        blocks = get_blocks_from_files(include_ids=True)
+        post_ephemeral_blocks(channel_id, blocks, user_id)
+        return
+
+    if command_text == 'edit' or command_text.startswith('edit '):
+        edit_body = command_text[4:].strip()
+        if not edit_body:
+            ack(EDIT_USAGE)
+            return
+        try:
+            segments = _parse_edit_segments(edit_body)
+        except (ValueError, ClipPrefixError) as e:
+            ack(str(e))
+            return
+        ack('Editing highlight…')
+        threading.Thread(
+            target=_run_edit_and_upload,
+            args=(channel_id, user_id, segments),
+            daemon=True,
+        ).start()
         return
 
     ack()

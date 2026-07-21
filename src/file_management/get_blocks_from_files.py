@@ -1,10 +1,16 @@
+from pathlib import Path
 from typing import Optional, Union
 from file_management.blocks.action_row import action_row
 from file_management.blocks.buttons import delete_clip_button, get_collect_session_button
 from get_clip_age import get_clip_age
 from file_management.get_sessions import get_sessions
 from file_management.blocks.placeholder_buttons import loading_button, collected_button
-def get_blocks_from_files(currently_collecting: Optional[Union[int, str]] = None):
+
+
+def get_blocks_from_files(
+    currently_collecting: Optional[Union[int, str]] = None,
+    include_ids: bool = False,
+):
     blocks = []
     
     sessions = get_sessions()
@@ -33,7 +39,12 @@ def get_blocks_from_files(currently_collecting: Optional[Union[int, str]] = None
         blocks.append(next_block)
         
         for file_name in session:
-            clip_title = f"Recorded {get_clip_age(file_name)}"
+            age = get_clip_age(file_name)
+            if include_ids:
+                clip_id = Path(file_name).stem[:8]
+                clip_title = f"{clip_id} · Recorded {age}"
+            else:
+                clip_title = f"Recorded {age}"
             next_block = {
                 "type": "section",
                 "text": {

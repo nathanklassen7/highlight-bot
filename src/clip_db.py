@@ -68,6 +68,29 @@ def get_clip(clip_id: str) -> Optional[dict]:
     return _row_to_dict(row) if row else None
 
 
+class ClipPrefixError(ValueError):
+    """Raised when a clip ID prefix cannot be resolved uniquely."""
+
+
+def resolve_clip_prefix(prefix: str) -> dict:
+    """Resolve a clip by ID prefix (length >= 8). Raises ClipPrefixError on failure."""
+    normalized = prefix.strip().lower()
+    if len(normalized) < 8:
+        raise ClipPrefixError(f"Prefix too short (need at least 8 chars): {prefix}")
+    if not all(c in "0123456789abcdef" for c in normalized):
+        raise ClipPrefixError(f"Invalid clip ID prefix: {prefix}")
+
+    rows = _get_conn().execute(
+        "SELECT * FROM clips WHERE id LIKE ?", (normalized + "%",)
+    ).fetchall()
+
+    if len(rows) == 0:
+        raise ClipPrefixError(f"No clip found for prefix: {normalized[:8]}")
+    if len(rows) > 1:
+        raise ClipPrefixError(f"Ambiguous prefix: {normalized[:8]}")
+    return _row_to_dict(rows[0])
+
+
 def get_clip_by_filename(filename: str) -> Optional[dict]:
     row = _get_conn().execute(
         "SELECT * FROM clips WHERE filename = ?", (filename,)
